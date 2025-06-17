@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Welcome, {{ current_user.full_name }}!</h1>
+
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5>Your Roles</h5>
+                {% for role in current_user.roles %}
+                    <span class="badge bg-light text-dark">{{ role.name }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5>Status</h5>
+                <p>{{ 'Active' if current_user.is_active else 'Inactive' }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5>Last Login</h5>
+                <p>{{ current_user.last_login.strftime('%Y-%m-%d %H:%M') if current_user.last_login else 'First time!' }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h5>Login Count</h5>
+                <p>{{ current_user.login_count or 0 }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
