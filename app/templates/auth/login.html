@@ -1,29 +1,52 @@
 {% extends "base.html" %}
 
+{% block title %}Login - {{ super() }}{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow">
             <div class="card-body">
-                <h2 class="card-title text-center mb-4">Login to Your Account</h2>
-                
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('auth.oauth_login', provider='google') }}" class="btn btn-danger btn-lg">
+                <h2 class="card-title text-center mb-4">Login</h2>
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.username_or_email.label(class="form-label") }}
+                        {{ form.username_or_email(class="form-control") }}
+                        {% for err in form.username_or_email.errors %}
+                        <div class="text-danger small">{{ err }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.password.label(class="form-label") }}
+                        {{ form.password(class="form-control") }}
+                        {% for err in form.password.errors %}
+                        <div class="text-danger small">{{ err }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-grid mb-3">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+                <div class="d-grid gap-2 mb-3">
+                    <a href="{{ url_for('auth.oauth_login', provider='google') }}" class="btn btn-danger">
                         <i class="fab fa-google me-2"></i> Login with Google
                     </a>
-                    
-                    <a href="{{ url_for('auth.oauth_login', provider='github') }}" class="btn btn-dark btn-lg">
+                    <a href="{{ url_for('auth.oauth_login', provider='github') }}" class="btn btn-dark">
                         <i class="fab fa-github me-2"></i> Login with GitHub
                     </a>
-                    
                     {% if config.AZURE_CLIENT_ID %}
-                    <a href="{{ url_for('auth.oauth_login', provider='azure') }}" class="btn btn-primary btn-lg">
+                    <a href="{{ url_for('auth.oauth_login', provider='azure') }}" class="btn btn-primary">
                         <i class="fab fa-microsoft me-2"></i> Login with Microsoft
                     </a>
                     {% endif %}
                 </div>
+                <p class="text-center">
+                    Don't have an account? <a href="{{ url_for('auth.register') }}">Register</a>.
+                </p>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
+

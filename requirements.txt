@@ -15,7 +15,7 @@ Flask-Login
 Flask-Migrate
 Flask-Session
 Flask-SQLAlchemy
-Flask-WTF
+Flask-WTF>=1.2.1
 greenlet
 idna
 itsdangerous
@@ -31,7 +31,7 @@ requests
 SQLAlchemy
 typing_extensions
 urllib3
-Werkzeug>=2.3,<3
 WTForms
 playwright
 Pillow
+Werkzeug>=2.3,<3.0

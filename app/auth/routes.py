@@ -1,19 +1,67 @@
-from flask import render_template, redirect, url_for, flash, session, current_app
+from flask import render_template, redirect, url_for, flash, session, current_app, request
 from flask_login import login_user, logout_user, current_user
 from app.auth import bp
 from app import db, oauth
 from app.models.user import User
 from app.models.role import Role
+from sqlalchemy import or_
 from app.models.oauth import UserOAuthAccount
+from app.auth.forms import LoginForm, RegistrationForm
 from datetime import datetime
 import requests
 
-@bp.route('/login')
+@bp.route('/login', methods=['GET', 'POST'])
 def login():
-    """Display login page"""
+    """Display login page and handle form login"""
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
-    return render_template('auth/login.html')
+
+    form = LoginForm()
+    if form.validate_on_submit():
+        identifier = form.username_or_email.data
+        user = User.query.filter(
+            or_(User.username == identifier, User.email == identifier)
+        ).first()
+        if user and user.check_password(form.password.data):
+            login_user(user)
+            flash('Logged in successfully.', 'success')
+            return redirect(url_for('main.dashboard'))
+        flash('Invalid credentials', 'error')
+
+    return render_template('auth/login.html', form=form)
+
+
+@bp.route('/register', methods=['GET', 'POST'])
+def register():
+    """Register a new user"""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.dashboard'))
+
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        if User.query.filter_by(username=form.username.data).first():
+            flash('Username already taken', 'error')
+        elif User.query.filter_by(email=form.email.data).first():
+            flash('Email already registered', 'error')
+        else:
+            user = User(
+                username=form.username.data,
+                email=form.email.data,
+                first_name=form.first_name.data,
+                last_name=form.last_name.data,
+                is_active=True,
+            )
+            user.set_password(form.password.data)
+            default_role = Role.query.filter_by(name='viewer').first()
+            if default_role:
+                user.roles.append(default_role)
+            db.session.add(user)
+            db.session.commit()
+            login_user(user)
+            flash('Registration successful.', 'success')
+            return redirect(url_for('main.dashboard'))
+
+    return render_template('auth/register.html', form=form)
 
 @bp.route('/login/<provider>')
 def oauth_login(provider):

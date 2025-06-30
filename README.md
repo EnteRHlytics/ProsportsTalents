@@ -42,6 +42,14 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
+## User authentication
+
+Local accounts can be created directly in the app. Visit `/auth/register` to
+sign up. New users are automatically logged in and assigned the default `viewer`
+role. Existing users can log in at `/auth/login` using their username or email
+address and password. OAuth logins for Google, GitHub and Microsoft remain
+available when configured.
+
 ## Docker
 
 A `Dockerfile` and `docker-compose.yml` are provided. To run the app with PostgreSQL using Docker:
