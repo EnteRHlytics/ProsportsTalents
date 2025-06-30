@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="jumbotron bg-primary text-white text-center py-5 mb-5 rounded">
+    <h1 class="display-4">Sports Talent Agency</h1>
+    <p class="lead">Connecting elite athletes with professional opportunities</p>
+    {% if not current_user.is_authenticated %}
+    <a class="btn btn-light btn-lg" href="{{ url_for('auth.login') }}" role="button">
+        Get Started
+    </a>
+    {% endif %}
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Athlete Profiles</h5>
+                <p class="card-text">Comprehensive athlete profiles with performance data, highlights, and statistics.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Team Connections</h5>
+                <p class="card-text">Connect with professional sports teams looking for talent.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Sponsor Opportunities</h5>
+                <p class="card-text">Find sponsorship opportunities for professional athletes.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

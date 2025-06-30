@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Login - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Login to Your Account</h2>
+                
+                <p class="text-center text-muted mb-4">
+                    OAuth providers will be configured soon.
+                </p>
+                
+                <!-- Placeholder OAuth Login Buttons -->
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('auth.oauth_login', provider='google') }}" 
+                       class="btn btn-danger btn-lg disabled">
+                        Login with Google (Coming Soon)
+                    </a>
+                    
+                    <a href="{{ url_for('auth.oauth_login', provider='github') }}" 
+                       class="btn btn-dark btn-lg disabled">
+                        Login with GitHub (Coming Soon)
+                    </a>
+                    
+                    <a href="{{ url_for('auth.oauth_login', provider='azure') }}" 
+                       class="btn btn-primary btn-lg disabled">
+                        Login with Microsoft (Coming Soon)
+                    </a>
+                </div>
+                
+                <hr class="my-4">
+                
+                <div class="text-center">
+                    <small class="text-muted">
+                        OAuth integration will be set up in the next phase.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

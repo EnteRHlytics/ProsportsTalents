@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Athlete - {{ super() }}{% endblock %}
+
+{% block content %}
+<div id="athlete-container" class="text-center p-5">
+  <div id="loading" class="spinner-border" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module">
+import { getAthlete } from '/static/js/apiClient.js';
+const container = document.getElementById('athlete-container');
+const athleteId = '{{ athlete_id }}';
+getAthlete(athleteId).then(data => {
+  container.innerHTML = `<h2>${data.first_name} ${data.last_name}</h2>`;
+}).catch(() => {
+  container.innerHTML = '<div class="alert alert-danger">Failed to load athlete.</div>';
+});
+</script>
+{% endblock %}

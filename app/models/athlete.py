@@ -39,6 +39,7 @@ class AthleteProfile(BaseModel):
     profile_image_url = db.Column(db.String(500))
     is_verified = db.Column(db.Boolean, default=False)
     verification_date = db.Column(db.DateTime)
+    is_deleted = db.Column(db.Boolean, default=False)
     
     # Search and ranking
     search_vector = db.Column(db.Text)  # For full-text search
@@ -48,6 +49,7 @@ class AthleteProfile(BaseModel):
     user = db.relationship('User', back_populates='athlete_profile')
     primary_sport = db.relationship('Sport', back_populates='athletes')
     primary_position = db.relationship('Position')
+    skills = db.relationship('AthleteSkill', back_populates='athlete', cascade='all, delete-orphan')
     
     # Constraints
     __table_args__ = (
@@ -56,6 +58,7 @@ class AthleteProfile(BaseModel):
         db.CheckConstraint('overall_rating BETWEEN 0 AND 99.99', name='ck_rating_range'),
         db.Index('idx_athletes_sport_position', 'primary_sport_id', 'primary_position_id'),
         db.Index('idx_athletes_status_verified', 'career_status', 'is_verified'),
+        db.Index('idx_athletes_deleted', 'is_deleted'),
         db.Index('idx_athletes_search', 'search_vector'),  # For full-text search
     )
     
@@ -72,3 +75,10 @@ class AthleteProfile(BaseModel):
     
     def __repr__(self):
         return f'<AthleteProfile {self.user.full_name}>'
+
+    def to_dict(self):
+        """Return a dict representation including related user."""
+        data = super().to_dict()
+        if self.user:
+            data['user'] = self.user.to_dict()
+        return data

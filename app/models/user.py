@@ -23,6 +23,12 @@ class User(UserMixin, db.Model):
     # Relationships
     roles = db.relationship('Role', secondary='user_roles', back_populates='users')
     oauth_accounts = db.relationship('UserOAuthAccount', back_populates='user', cascade='all, delete-orphan')
+    athlete_profile = db.relationship(
+        'AthleteProfile',
+        back_populates='user',
+        uselist=False,
+        cascade='all, delete-orphan'
+    )
     
     def get_id(self):
         """Required by Flask-Login"""
@@ -49,3 +55,21 @@ class User(UserMixin, db.Model):
     
     def __repr__(self):
         return f'<User {self.username}>'
+
+    def to_dict(self):
+        """Return a dictionary of user fields with full_name."""
+        data = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        data['full_name'] = self.full_name
+        return data
+
+    def save(self):
+        """Persist the user to the database."""
+        db.session.add(self)
+        db.session.commit()
+        return self
+
+    def delete(self):
+        """Remove the user from the database."""
+        db.session.delete(self)
+        db.session.commit()
+        return True

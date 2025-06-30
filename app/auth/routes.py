@@ -53,8 +53,9 @@ def oauth_callback(provider):
             user.login_count = (user.login_count or 0) + 1
             db.session.commit()
             
-            # Login user
+            # Login user and store token for API access
             login_user(user, remember=True)
+            session['auth_token'] = token.get('access_token', '')
             flash(f'Successfully logged in with {provider.title()}!', 'success')
             return redirect(url_for('main.dashboard'))
         else:

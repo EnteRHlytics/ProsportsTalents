@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Athlete Form - {{ super() }}{% endblock %}
+
+{% block content %}
+<h1>Athlete Form</h1>
+<form method="post">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+        {{ form.first_name.label(class="form-label") }}
+        {{ form.first_name(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        {{ form.last_name.label(class="form-label") }}
+        {{ form.last_name(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        {{ form.date_of_birth.label(class="form-label") }}
+        {{ form.date_of_birth(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        {{ form.nationality.label(class="form-label") }}
+        {{ form.nationality(class="form-control") }}
+    </div>
+    {{ form.submit(class="btn btn-primary") }}
+</form>
+{% endblock %}

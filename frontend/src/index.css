@@ -1,0 +1,82 @@
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Filters on the athlete list page */
+.filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 600px) {
+  .filter-controls {
+    flex-wrap: nowrap;
+  }
+}
+
+/* Profile container styling */
+.profile-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.profile-container h2 {
+  margin-top: 0;
+=======
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.form-row label {
+  flex: 1 0 150px;
+}
+
+.form-row input {
+  flex: 2 0 200px;
+  padding: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .form-row label {
+    margin-bottom: 0.25rem;
+  }
+}
+
+.skill-list,
+.stat-list {
+  list-style: none;
+  padding: 0;
+}
+
+.skill-list li,
+.stat-list li {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+
+}
