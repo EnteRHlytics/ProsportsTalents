@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import request, abort
+from flask import request, abort, session, redirect, url_for, flash
 from flask_login import current_user, login_user
 from app.models.oauth import UserOAuthAccount
 
@@ -23,6 +23,19 @@ def login_or_token_required(fn):
                 return fn(*args, **kwargs)
 
         abort(401)
+
+    return wrapper
+
+
+def oauth_session_required(fn):
+    """Require an authenticated user with an OAuth session token."""
+
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not current_user.is_authenticated or not session.get('auth_token'):
+            flash('Please log in to access this page.', 'warning')
+            return redirect(url_for('auth.login'))
+        return fn(*args, **kwargs)
 
     return wrapper
 

@@ -56,7 +56,11 @@ POST /api/athletes/<athlete_id>/stats
 
 ## Searching Profiles
 
-Use `GET /api/athletes/search` with query parameters such as `q`, `sport`, `position` or `team` to find athletes.
+Use `GET /api/athletes` with a `q` parameter to perform a basic search over athlete names, positions or team names. Advanced filtering remains available via `GET /api/athletes/search`.
+
+## Featuring Athletes
+
+Administrators can highlight specific players on the homepage by setting the `is_featured` flag on an `AthleteProfile` record. The `GET /api/athletes/featured` endpoint returns the curated list which populates the "Featured Athletes" grid. Update a profile using `PUT /api/athletes/<athlete_id>` with `{"is_featured": true}` to mark them as featured.
 
 ## Deleting a Profile
 

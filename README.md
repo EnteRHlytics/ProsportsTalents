@@ -16,14 +16,30 @@ This repository contains a Flask API backend and a React frontend used to manage
    - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
    - `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
    - `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` and `AZURE_TENANT_ID`
-3. **Database migrations**
-   ```bash
-   flask db upgrade
-   ```
-4. **Run the server**
+   - `NBA_API_TOKEN` optional access token for NBA stats API
+   - `NBA_API_BASE_URL` override base URL for NBA API (optional)
+### Initialize the database
+Run database migrations to create all tables:
+
+```bash
+flask db upgrade
+```
+
+The latest migrations add indexes on stat tables for faster lookups. Run the
+above command whenever pulling new code to ensure these indexes exist.
+The August 1 migration adds indexes on user first and last name and current team to speed up searches.
+The July 15 migration also enforces unique season and game stats and
+checks that game scores are non-negative.
+
+3. **Run the server**
    ```bash
    flask run
    ```
+
+4. **Scheduled jobs** (optional)
+   Set `ENABLE_SCHEDULER=true` in your `.env` to start APScheduler with nightly
+   and weekly sync tasks when the Flask app launches. Game results are pulled
+   each night at 2 AM and player stats update every Sunday at 3 AM.
 
 ## Frontend setup (React)
 
@@ -63,6 +79,18 @@ This starts the Flask server on port `5000` and a Postgres database on `5432`.
 
 The React frontend is regularly tested on the latest versions of Chrome, Firefox, Safari and Edge. Other modern browsers that support ES2015+ features should also work.
 
+## Dashboard features (Phases 1–3)
+
+The `/dashboard` page implements the core capabilities delivered so far:
+
+- Quick action links for editing a profile, managing account settings and, for administrators, adding new athletes.
+- Buttons for **📁 Upload Media** and **📊 View Analytics** which lead to placeholder pages.
+- Summary metrics showing total athletes, active contracts, new signups this week and a placeholder **Client Satisfaction** percentage.
+- Featured athlete cards displaying position, team and sport information.
+- A Top Rankings preview calculated using a simple single-stat formula. A **⚙️ Customize Metrics** modal hints at future ranking options.
+
+Advanced search and a full ranking algorithm are deferred until Phase 4. Mobile apps and cloud deployment are out of scope; the project targets local web use only.
+
 ## Checking layout on mobile vs. desktop
 
 To verify the responsive design manually:
@@ -79,3 +107,12 @@ Additional technical documentation is available in the `docs/` directory:
 - `database_schema.md` – overview of the database tables and relationships
 - `api_endpoints.md` – list of API endpoints with parameters
 - `user_guide_athletes.md` – instructions for managing athlete profiles
+
+The dashboard also shows a **Client Satisfaction** percentage. This metric is a
+placeholder value (set to 98.7%) for the demo. In Phase 3 the client may provide
+a formula or survey data to calculate it dynamically.
+
+An **📊 View Analytics** button now links to `/analytics`. This page simply states "Coming soon" until full reporting features arrive in Phase 5.
+A **📁 Upload Media** button in the dashboard directs to `/media/upload` where administrators can attach files to athlete profiles.
+The API exposes a `/api/rankings/top` endpoint returning five placeholder athletes with an overall score. These values remain static until a real ranking system is implemented.
+The rankings page also includes a **⚙️ Customize Metrics** button. Clicking it opens a modal explaining that ranking weight adjustments are coming in a future phase.

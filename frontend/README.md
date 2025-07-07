@@ -19,6 +19,14 @@ npm run dev
 
 The server proxies API requests to `http://localhost:5000` so make sure the Flask backend is running locally on port 5000.
 
+## Unit tests
+
+Vitest is used for component unit tests. After installing dependencies run:
+
+```bash
+npm run test
+```
+
 ## End-to-end tests
 
 Playwright tests are located in the `tests` directory. They spin up the Flask

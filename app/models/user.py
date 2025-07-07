@@ -52,6 +52,23 @@ class User(UserMixin, db.Model):
     def full_name(self):
         """Get full name"""
         return f"{self.first_name} {self.last_name}"
+
+    @property
+    def initials(self):
+        """Return user initials."""
+        first = self.first_name[0] if self.first_name else ''
+        last = self.last_name[0] if self.last_name else ''
+        return f"{first}{last}".upper()
+
+    @property
+    def avatar_url(self):
+        """Return avatar URL from OAuth provider data if available."""
+        for account in self.oauth_accounts:
+            data = account.provider_data or {}
+            url = data.get('picture') or data.get('avatar_url')
+            if url:
+                return url
+        return None
     
     def __repr__(self):
         return f'<User {self.username}>'

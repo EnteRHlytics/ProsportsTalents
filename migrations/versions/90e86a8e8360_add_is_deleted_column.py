@@ -1,7 +1,7 @@
 """Add is_deleted column to athlete_profiles
 
 Revision ID: 90e86a8e8360
-Revises: 5bb8dbba77e3
+Revises: cbacbef4e34e
 Create Date: 2025-06-17 00:00:00.000000
 """
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '90e86a8e8360'
-down_revision = '5bb8dbba77e3'
+down_revision = 'cbacbef4e34e'
 branch_labels = None
 depends_on = None
 

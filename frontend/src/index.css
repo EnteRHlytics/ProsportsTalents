@@ -33,11 +33,6 @@ body {
 
 .profile-container h2 {
   margin-top: 0;
-=======
-.container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 1rem;
 }
 
 .form-row {
@@ -79,4 +74,95 @@ body {
   justify-content: space-between;
   margin-bottom: 0.5rem;
 
+}
+
+.stat-chart {
+  max-width: 600px;
+  margin-top: 1rem;
+}
+
+/* Season stats table */
+.season-stats {
+  margin-top: 1rem;
+}
+
+/* Game log table */
+.game-log {
+  margin-top: 1rem;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.stat-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.stat-table th,
+.stat-table td {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.stat-table th {
+  background: #f0f0f0;
+}
+
+.career-high {
+  background-color: #ffecb3;
+  font-weight: bold;
+}
+
+.stats-section {
+  margin-top: 1rem;
+}
+
+/* Stats tabs */
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tab-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: #e0e0e0;
+  cursor: pointer;
+}
+
+.tab-button.active {
+  background: #007bff;
+  color: #fff;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  /* Allow horizontal scrolling for stat tables on small screens */
+  .stat-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  /* Allow tabs to wrap on small screens */
+  .tabs {
+    flex-wrap: wrap;
+  }
+
+  /* Ensure charts scale within mobile viewports */
+  .stat-chart {
+    max-width: 100%;
+  }
+  .stat-chart canvas {
+    width: 100% !important;
+    height: auto !important;
+  }
 }

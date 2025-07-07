@@ -11,6 +11,27 @@
     {% endif %}
 </div>
 
+<div class="search-section text-center my-4">
+    <form id="homepage-search" class="d-flex justify-content-center">
+        <input type="text" id="search-query" class="form-control form-control-lg me-2" placeholder="Search athletes..." value="{{ search_query }}">
+        <button type="submit" id="search-submit" class="btn btn-secondary btn-lg">Search</button>
+    </form>
+    <ul id="search-results" class="list-group w-50 mx-auto mt-3"></ul>
+</div>
+
+<div class="featured-container my-4">
+    <h2 class="text-center mb-3">Featured Athletes</h2>
+    <ul id="filter-tabs" class="nav nav-pills justify-content-center mb-3">
+        <li class="nav-item"><button class="nav-link{% if active_filter|default('top')|lower == 'top' %} active{% endif %}" data-filter="top">Top</button></li>
+        <li class="nav-item"><button class="nav-link{% if active_filter|lower == 'nba' %} active{% endif %}" data-filter="NBA">NBA</button></li>
+        <li class="nav-item"><button class="nav-link{% if active_filter|lower == 'nfl' %} active{% endif %}" data-filter="NFL">NFL</button></li>
+        <li class="nav-item"><button class="nav-link{% if active_filter|lower == 'mlb' %} active{% endif %}" data-filter="MLB">MLB</button></li>
+        <li class="nav-item"><button class="nav-link{% if active_filter|lower == 'nhl' %} active{% endif %}" data-filter="NHL">NHL</button></li>
+        <li class="nav-item"><button class="nav-link{% if active_filter|lower == 'available' %} active{% endif %}" data-filter="available">Available</button></li>
+    </ul>
+    <div id="featured-grid" class="athlete-grid"></div>
+</div>
+
 <div class="row">
     <div class="col-md-4">
         <div class="card h-100">
@@ -39,4 +60,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
 {% endblock %}

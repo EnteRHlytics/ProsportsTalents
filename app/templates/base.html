@@ -8,17 +8,33 @@
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary navbar-glass">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('main.index') }}">Sports Talent Agency</a>
             
-            <div class="navbar-nav ms-auto">
+            <div class="navbar-nav ms-auto d-flex align-items-center">
+                <a class="nav-link" href="{{ url_for('athletes.index') }}">Athletes</a>
                 {% if current_user.is_authenticated %}
-                    <span class="navbar-text me-3">Hello, {{ current_user.full_name }}!</span>
-                    <a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
-                    <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="user-avatar">
+                            {% if current_user.avatar_url %}
+                                <img src="{{ current_user.avatar_url }}" alt="User avatar">
+                            {% else %}
+                                {{ current_user.initials }}
+                            {% endif %}
+                        </div>
+                        <span class="d-none d-lg-inline ms-2">{{ current_user.full_name }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                    </ul>
+                </div>
                 {% else %}
-                    <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
                 {% endif %}
             </div>
         </div>

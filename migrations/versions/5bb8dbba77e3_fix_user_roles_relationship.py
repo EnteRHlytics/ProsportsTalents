@@ -1,7 +1,7 @@
 """Fix user roles relationship
 
 Revision ID: 5bb8dbba77e3
-Revises: 
+Revises: None
 Create Date: 2025-06-16 15:38:46.088450
 
 """
@@ -60,6 +60,28 @@ def upgrade():
     sa.UniqueConstraint('provider_name', name='oauth_providers_provider_name_key', postgresql_include=[], postgresql_nulls_not_distinct=False),
     postgresql_ignore_search_path=False
     )
+    op.create_table('users',
+    sa.Column('user_id', sa.VARCHAR(length=36), autoincrement=False, nullable=False),
+    sa.Column('username', sa.VARCHAR(length=50), autoincrement=False, nullable=False),
+    sa.Column('email', sa.VARCHAR(length=255), autoincrement=False, nullable=False),
+    sa.Column('email_verified', sa.BOOLEAN(), autoincrement=False, nullable=False),
+    sa.Column('password_hash', sa.VARCHAR(length=255), autoincrement=False, nullable=True),
+    sa.Column('first_name', sa.VARCHAR(length=100), autoincrement=False, nullable=False),
+    sa.Column('last_name', sa.VARCHAR(length=100), autoincrement=False, nullable=False),
+    sa.Column('status', postgresql.ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED', 'PENDING', name='userstatus'), autoincrement=False, nullable=False),
+    sa.Column('last_login', postgresql.TIMESTAMP(), autoincrement=False, nullable=True),
+    sa.Column('login_count', sa.INTEGER(), autoincrement=False, nullable=True),
+    sa.Column('created_at', postgresql.TIMESTAMP(), autoincrement=False, nullable=False),
+    sa.Column('updated_at', postgresql.TIMESTAMP(), autoincrement=False, nullable=False),
+    sa.PrimaryKeyConstraint('user_id', name='users_pkey'),
+    postgresql_ignore_search_path=False
+    )
+    with op.batch_alter_table('users', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_users_username'), ['username'], unique=True)
+        batch_op.create_index(batch_op.f('ix_users_email'), ['email'], unique=True)
+        batch_op.create_index(batch_op.f('idx_users_username_status'), ['username', 'status'], unique=False)
+        batch_op.create_index(batch_op.f('idx_users_email_status'), ['email', 'status'], unique=False)
+
     op.create_table('athlete_profiles',
     sa.Column('athlete_id', sa.VARCHAR(length=36), autoincrement=False, nullable=False),
     sa.Column('user_id', sa.VARCHAR(length=36), autoincrement=False, nullable=False),
@@ -109,28 +131,6 @@ def upgrade():
     sa.UniqueConstraint('name', name='roles_name_key', postgresql_include=[], postgresql_nulls_not_distinct=False),
     postgresql_ignore_search_path=False
     )
-    op.create_table('users',
-    sa.Column('user_id', sa.VARCHAR(length=36), autoincrement=False, nullable=False),
-    sa.Column('username', sa.VARCHAR(length=50), autoincrement=False, nullable=False),
-    sa.Column('email', sa.VARCHAR(length=255), autoincrement=False, nullable=False),
-    sa.Column('email_verified', sa.BOOLEAN(), autoincrement=False, nullable=False),
-    sa.Column('password_hash', sa.VARCHAR(length=255), autoincrement=False, nullable=True),
-    sa.Column('first_name', sa.VARCHAR(length=100), autoincrement=False, nullable=False),
-    sa.Column('last_name', sa.VARCHAR(length=100), autoincrement=False, nullable=False),
-    sa.Column('status', postgresql.ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED', 'PENDING', name='userstatus'), autoincrement=False, nullable=False),
-    sa.Column('last_login', postgresql.TIMESTAMP(), autoincrement=False, nullable=True),
-    sa.Column('login_count', sa.INTEGER(), autoincrement=False, nullable=True),
-    sa.Column('created_at', postgresql.TIMESTAMP(), autoincrement=False, nullable=False),
-    sa.Column('updated_at', postgresql.TIMESTAMP(), autoincrement=False, nullable=False),
-    sa.PrimaryKeyConstraint('user_id', name='users_pkey'),
-    postgresql_ignore_search_path=False
-    )
-    with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_users_username'), ['username'], unique=True)
-        batch_op.create_index(batch_op.f('ix_users_email'), ['email'], unique=True)
-        batch_op.create_index(batch_op.f('idx_users_username_status'), ['username', 'status'], unique=False)
-        batch_op.create_index(batch_op.f('idx_users_email_status'), ['email', 'status'], unique=False)
-
     op.create_table('user_oauth_accounts',
     sa.Column('account_id', sa.VARCHAR(length=36), autoincrement=False, nullable=False),
     sa.Column('user_id', sa.VARCHAR(length=36), autoincrement=False, nullable=False),

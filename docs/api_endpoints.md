@@ -6,7 +6,7 @@ All API routes are prefixed with `/api`. Authentication is required for endpoint
 
 | Method | Endpoint | Description |
 | ------ | -------- | ----------- |
-| GET | `/api/athletes` | List athlete profiles (pagination via `page` and `per_page`). |
+| GET | `/api/athletes` | List athlete profiles. Supports pagination via `page` and `per_page` and basic search using `q`, `position` and `team` query parameters. |
 | POST | `/api/athletes` | Create a new athlete profile. Requires `user_id`, `primary_sport_id`, `primary_position_id` and `date_of_birth`. |
 | GET | `/api/athletes/<athlete_id>` | Retrieve a single athlete profile. |
 | PUT | `/api/athletes/<athlete_id>` | Update an athlete profile. Auth required. |
@@ -33,4 +33,10 @@ All API routes are prefixed with `/api`. Authentication is required for endpoint
 
 | Method | Endpoint | Description |
 | ------ | -------- | ----------- |
-| GET | `/api/athletes/search` | Search athletes using query parameters such as `q`, `sport`, `position`, `team`, age/height/weight filters. |
+| GET | `/api/athletes/search` | Search athletes using query parameters such as `q`, `sport`, `position`, `team`, age/height/weight filters and the `filter` tab (nba, nfl, mlb, nhl, available, top). |
+
+## Rankings
+
+| Method | Endpoint | Description |
+| ------ | -------- | ----------- |
+| GET | `/api/rankings/top` | Return the top five athletes using a temporary single-stat score (falls back to a small static list). |

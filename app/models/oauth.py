@@ -9,8 +9,8 @@ class UserOAuthAccount(db.Model):
     user_id = db.Column(db.String(36), db.ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False)
     provider_name = db.Column(db.String(50), nullable=False)  # 'google', 'github', 'azure'
     provider_user_id = db.Column(db.String(255), nullable=False)
-    access_token = db.Column(db.Text)  # In production, encrypt this
-    refresh_token = db.Column(db.Text)  # In production, encrypt this
+    access_token = db.Column('access_token_encrypted', db.Text)  # In production, encrypt this
+    refresh_token = db.Column('refresh_token_encrypted', db.Text)  # In production, encrypt this
     provider_data = db.Column(db.JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

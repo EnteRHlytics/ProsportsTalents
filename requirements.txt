@@ -35,3 +35,4 @@ WTForms
 playwright
 Pillow
 Werkzeug>=2.3,<3.0
+APScheduler

@@ -33,6 +33,7 @@ class AthleteProfile(BaseModel):
     years_professional = db.Column(db.Integer)
     current_team = db.Column(db.String(100))
     jersey_number = db.Column(db.String(5))
+    contract_active = db.Column(db.Boolean, default=True)
     
     # Profile information
     bio = db.Column(db.Text)
@@ -40,6 +41,7 @@ class AthleteProfile(BaseModel):
     is_verified = db.Column(db.Boolean, default=False)
     verification_date = db.Column(db.DateTime)
     is_deleted = db.Column(db.Boolean, default=False)
+    is_featured = db.Column(db.Boolean, default=False)
     
     # Search and ranking
     search_vector = db.Column(db.Text)  # For full-text search

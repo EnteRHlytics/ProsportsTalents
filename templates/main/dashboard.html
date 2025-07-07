@@ -27,13 +27,104 @@
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Quick Actions</h5>
-                <ul class="list-unstyled">
+                <ul class="list-unstyled quick-actions">
                     <li><a href="#" class="text-decoration-none">Edit Profile</a></li>
                     <li><a href="#" class="text-decoration-none">Account Settings</a></li>
                     <li><a href="#" class="text-decoration-none">Privacy Settings</a></li>
+                    {% if current_user.has_role('agency_admin') or current_user.has_role('admin') %}
+                    <li>
+                        <a href="{{ url_for('athletes.create') }}" class="action-btn btn-primary">&#43; Add New Athlete</a>
+                    </li>
+                    {% endif %}
+                    <li>
+                        <a href="{{ url_for('main.upload_media') }}" class="text-decoration-none">📁 Upload Media</a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('main.analytics') }}" class="text-decoration-none">📊 View Analytics</a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('main.rankings') }}" class="text-decoration-none">📈 View Full Rankings</a>
+                    </li>
                 </ul>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="stats-grid mt-4">
+    <div class="card text-center">
+        <div class="card-body">
+            <h5 class="card-title">Total Athletes</h5>
+            <p class="display-6 nba">{{ total_athletes }}</p>
+        </div>
+    </div>
+    <div class="card text-center">
+        <div class="card-body">
+            <h5 class="card-title">Active Contracts</h5>
+            <p class="display-6 nfl">{{ active_contracts }}</p>
+        </div>
+    </div>
+    <div class="card text-center">
+        <div class="card-body">
+            <h5 class="card-title">New This Week</h5>
+            <p class="display-6 mlb">{{ new_this_week }}</p>
+        </div>
+    </div>
+    <div class="card text-center">
+        <div class="card-body">
+            <h5 class="card-title">Client Satisfaction</h5>
+            <p class="display-6 nhl">{{ client_satisfaction }}%</p>
+        </div>
+    </div>
+</div>
+
+<div class="featured-athletes mt-4">
+    <h3>Featured Athletes</h3>
+    <div class="athlete-grid">
+        {% for athlete in featured_athletes %}
+        <a href="{{ url_for('athletes.detail', athlete_id=athlete.athlete_id) }}" class="athlete-card card h-100 text-decoration-none">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    {% if athlete.profile_image_url %}
+                    <img src="{{ athlete.profile_image_url }}" alt="{{ athlete.name }} photo" class="athlete-photo me-2">
+                    {% else %}
+                    <div class="athlete-photo me-2">{{ athlete.initials }}</div>
+                    {% endif %}
+                    <h5 class="athlete-name card-title mb-0">{{ athlete.name }}</h5>
+                </div>
+                <p class="athlete-details text-muted">{{ athlete.position }} • {{ athlete.team }} • {{ athlete.sport }}</p>
+                <div class="d-flex justify-content-between">
+                    {% for stat in athlete.stats %}
+                    <div class="stat text-center">
+                        <div class="h5 mb-0">{{ stat.value }}</div>
+                        <div class="stat-label-small text-muted">{{ stat.label }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="top-rankings mt-5">
+    <h3>Top Rankings</h3>
+    <div class="rankings-list">
+        {% for player in top_rankings %}
+        <div class="ranking-item">
+            <div class="rank-number">{{ loop.index }}</div>
+            <div class="ranking-info">
+                <div class="ranking-name">
+                    {% if player.id %}
+                    <a href="{{ url_for('athletes.detail', athlete_id=player.id) }}" class="text-decoration-none">{{ player.name }}</a>
+                    {% else %}
+                    {{ player.name }}
+                    {% endif %}
+                </div>
+                <div class="ranking-score">Overall Score: {{ '%.1f'|format(player.score|float) }}</div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
 </div>
 {% else %}
@@ -41,4 +132,8 @@
     Please <a href="{{ url_for('auth.login') }}">login</a> to access your dashboard.
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
 {% endblock %}

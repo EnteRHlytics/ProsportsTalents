@@ -3,10 +3,21 @@ from app.utils.validators import validate_json, validate_params
 from app.utils.auth import login_or_token_required
 from flask_restx import Resource
 import logging
+from sqlalchemy import or_
 
 from app.api import api, bp
 from app import db
-from app.models import AthleteProfile, AthleteMedia, AthleteStat
+from app.models import (
+    AthleteProfile,
+    AthleteMedia,
+    AthleteStat,
+    NBATeam,
+    NBAGame,
+    NHLTeam,
+    NHLGame,
+    User,
+    Position,
+)
 from app.services.media_service import MediaService
 from app.services.athlete_service import (
     create_athlete as create_athlete_service,
@@ -24,13 +35,42 @@ class AthleteList(Resource):
 
     @api.doc(description="List athletes", params={
         'page': 'Page number',
-        'per_page': 'Items per page'
+        'per_page': 'Items per page',
+        'q': 'Search term',
+        'position': 'Filter by position name',
+        'team': 'Filter by team name'
     })
     def get(self):
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
-        q = AthleteProfile.query.filter_by(is_deleted=False)
-        pagination = q.paginate(page=page, per_page=per_page, error_out=False)
+        search = request.args.get('q', '')
+        position = request.args.get('position')
+        team = request.args.get('team')
+
+        query = (
+            AthleteProfile.query.filter_by(is_deleted=False)
+            .join(User)
+            .outerjoin(Position)
+        )
+
+        if search:
+            pattern = f"%{search}%"
+            query = query.filter(
+                or_(
+                    User.first_name.ilike(pattern),
+                    User.last_name.ilike(pattern),
+                    Position.name.ilike(pattern),
+                    AthleteProfile.current_team.ilike(pattern),
+                )
+            )
+
+        if position:
+            query = query.filter(Position.name.ilike(f"%{position}%"))
+
+        if team:
+            query = query.filter(AthleteProfile.current_team.ilike(f"%{team}%"))
+
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
         data = [a.to_dict() for a in pagination.items]
         return jsonify({'items': data, 'total': pagination.total})
 
@@ -201,6 +241,109 @@ class AthleteStats(Resource):
         db.session.commit()
         logging.getLogger(__name__).info("Updated stat %s for athlete %s", name, athlete_id)
         return jsonify(stat.to_dict())
+
+
+@api.route('/athletes/<string:athlete_id>/stats/summary')
+@api.param('athlete_id', 'Athlete identifier')
+class AthleteStatsSummary(Resource):
+    """Return stats grouped by season for an athlete."""
+
+    @api.doc(description="Get aggregated stats for an athlete")
+    def get(self, athlete_id):
+        AthleteProfile.query.filter_by(athlete_id=athlete_id, is_deleted=False).first_or_404()
+        stats = AthleteStat.query.filter_by(athlete_id=athlete_id).all()
+        summary = {}
+        for s in stats:
+            season = s.season or 'career'
+            summary.setdefault(season, {})[s.name] = s.value
+        return jsonify(summary)
+
+
+@api.route('/athletes/<string:athlete_id>/game-log')
+@api.param('athlete_id', 'Athlete identifier')
+class AthleteGameLog(Resource):
+    """Return games for the athlete's current team with optional pagination."""
+
+    @api.doc(description="Get recent game log for an athlete")
+    def get(self, athlete_id):
+        athlete = (
+            AthleteProfile.query.filter_by(athlete_id=athlete_id, is_deleted=False)
+            .first_or_404()
+        )
+
+        if not athlete.current_team or not athlete.primary_sport:
+            return jsonify([])
+
+        code = athlete.primary_sport.code
+        season = request.args.get("season")
+        page = request.args.get("page", type=int)
+        per_page = request.args.get("per_page", type=int)
+
+        games_q = None
+        team = None
+        if code == "NBA":
+            team = NBATeam.query.filter(
+                (NBATeam.name.ilike(athlete.current_team))
+                | (NBATeam.full_name.ilike(athlete.current_team))
+                | (NBATeam.abbreviation.ilike(athlete.current_team))
+            ).first()
+            if team:
+                games_q = NBAGame.query.filter(
+                    (NBAGame.home_team_id == team.team_id)
+                    | (NBAGame.visitor_team_id == team.team_id)
+                )
+                if season:
+                    games_q = games_q.filter(NBAGame.season == int(season))
+                games_q = games_q.order_by(NBAGame.date.desc())
+        elif code == "NHL":
+            team = NHLTeam.query.filter(
+                (NHLTeam.name.ilike(athlete.current_team))
+                | (NHLTeam.location.ilike(athlete.current_team))
+                | (NHLTeam.abbreviation.ilike(athlete.current_team))
+            ).first()
+            if team:
+                games_q = NHLGame.query.filter(
+                    (NHLGame.home_team_id == team.team_id)
+                    | (NHLGame.visitor_team_id == team.team_id)
+                )
+                if season:
+                    games_q = games_q.filter(NHLGame.season == season)
+                games_q = games_q.order_by(NHLGame.date.desc())
+
+        if games_q is None:
+            return jsonify([])
+
+        if page and per_page:
+            pagination = games_q.paginate(page=page, per_page=per_page, error_out=False)
+            games = pagination.items
+            total = pagination.total
+        else:
+            limit = per_page or 5
+            games = games_q.limit(limit).all()
+            total = len(games)
+
+        result = []
+        for g in games:
+            data = g.to_dict()
+            if hasattr(g, "home_team") and g.home_team:
+                data["home_team_name"] = g.home_team.full_name or g.home_team.name
+            if hasattr(g, "visitor_team") and g.visitor_team:
+                data["visitor_team_name"] = (
+                    g.visitor_team.full_name or g.visitor_team.name
+                )
+            if team:
+                data["is_home"] = g.home_team_id == team.team_id
+                if g.home_team_id == team.team_id:
+                    data["opponent_name"] = (
+                        g.visitor_team.full_name or g.visitor_team.name
+                    )
+                else:
+                    data["opponent_name"] = g.home_team.full_name or g.home_team.name
+            result.append(data)
+
+        if page and per_page:
+            return jsonify({"items": result, "total": total})
+        return jsonify(result)
 
 
 @api.route('/stats/<string:stat_id>')

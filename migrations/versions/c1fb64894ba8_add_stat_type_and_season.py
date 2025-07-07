@@ -1,7 +1,7 @@
 """add stat_type and season to athlete_stats
 
 Revision ID: c1fb64894ba8
-Revises: 5bb8dbba77e3
+Revises: fa6e06b2cf59
 Create Date: 2025-07-01 00:00:00.000000
 """
 from alembic import op
@@ -9,7 +9,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'c1fb64894ba8'
-down_revision = '5bb8dbba77e3'
+down_revision = 'fa6e06b2cf59'
 branch_labels = None
 depends_on = None
 

@@ -13,6 +13,7 @@ class Sport(db.Model):
     
     # Relationships
     positions = db.relationship('Position', back_populates='sport', cascade='all, delete-orphan')
+    athletes = db.relationship('AthleteProfile', back_populates='primary_sport')
     
     def __repr__(self):
         return f'<Sport {self.name}>'

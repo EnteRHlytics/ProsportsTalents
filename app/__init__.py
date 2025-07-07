@@ -40,13 +40,17 @@ def create_app(config_name='development'):
 
     from app.api import bp as api_bp
     app.register_blueprint(api_bp)
+
+    if app.config.get('ENABLE_SCHEDULER'):
+        from .scheduler import init_scheduler
+        init_scheduler(app)
     
     # User loader
     @login_manager.user_loader
     def load_user(user_id):
         from app.models.user import User
         return User.query.get(user_id)
-    
+
     return app
 
 def configure_oauth(app):
