@@ -40,3 +40,18 @@ All API routes are prefixed with `/api`. Authentication is required for endpoint
 | Method | Endpoint | Description |
 | ------ | -------- | ----------- |
 | GET | `/api/rankings/top` | Return the top five athletes using a temporary single-stat score (falls back to a small static list). |
+
+## External Sports Data Proxies
+
+These endpoints proxy public sports data APIs via the backend (handles auth and avoids CORS).
+
+| Method | Endpoint | Upstream | Notes |
+| ------ | -------- | -------- | ----- |
+| GET | `/api/external/nba/teams` | BallDontLie NBA | Requires `NBA_API_TOKEN` or `BALLDONTLIE_API_TOKEN` |
+| GET | `/api/external/nfl/teams` | BallDontLie NFL | Requires `NFL_API_TOKEN` or `BALLDONTLIE_API_TOKEN` |
+| GET | `/api/external/mlb/teams` | MLB Stats API | No auth required |
+| GET | `/api/external/nhl/teams` | NHL Stats API | No auth required |
+
+Aliases:
+
+- `/api/nba/teams`, `/api/nfl/teams`, `/api/mlb/teams`, `/api/nhl/teams`

@@ -23,7 +23,7 @@ class NBAAPIClient:
         cache_timeout: int = 3600,
     ):
         self.base_url = base_url or current_app.config.get(
-            'NBA_API_BASE_URL', 'https://www.balldontlie.io/api/v1'
+            'NBA_API_BASE_URL', 'https://api.balldontlie.io/v1'
         )
         self.session = requests.Session()
         self.token = token or current_app.config.get('NBA_API_TOKEN')

@@ -22,9 +22,12 @@ class NFLAPIClient:
         cache_timeout: int = 3600,
     ):
         self.base_url = base_url or current_app.config.get(
-            "NFL_API_BASE_URL", "https://api.nfl.com/v1"
+            "NFL_API_BASE_URL", "https://api.balldontlie.io/nfl/v1"
         )
         self.session = requests.Session()
+        token = current_app.config.get("NFL_API_TOKEN")
+        if token:
+            self.session.headers.update({"Authorization": f"Bearer {token}"})
         self.rate_limiter = RateLimiter(rate_limit_interval)
         self.cache = SimpleCache(default_timeout=cache_timeout)
 
@@ -59,7 +62,7 @@ class NFLAPIClient:
         if cached is not None:
             return cached
         data = self._get("/teams")
-        teams = data.get("teams", [])
+        teams = data.get("teams") or data.get("data", [])
         self.cache.set("teams", teams)
         return teams
 

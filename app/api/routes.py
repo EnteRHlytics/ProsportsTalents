@@ -1,4 +1,4 @@
-from flask import request, send_file, abort, jsonify
+from flask import request, send_file, abort, jsonify, current_app
 from app.utils.validators import validate_json, validate_params
 from app.utils.auth import login_or_token_required
 from flask_restx import Resource
@@ -26,7 +26,55 @@ from app.services.athlete_service import (
     delete_athlete as delete_athlete_service,
     list_athletes as list_athletes_service,
 )
+from app.services.nba_service import NBAAPIClient
+from app.services.mlb_service import MLBAPIClient
+from app.services.nhl_service import NHLAPIClient
+from app.services.nfl_service import NFLAPIClient
+from app.utils.security import require_api_key
 
+
+@api.route('/health')
+class HealthCheck(Resource):
+    """Health check endpoint for monitoring"""
+    
+    @api.doc(description="Check application health")
+    def get(self):
+        """Return health status of the application"""
+        from sqlalchemy import text
+        import datetime
+        
+        try:
+            # Check database connection
+            db.session.execute(text('SELECT 1'))
+            db_status = 'healthy'
+        except Exception as e:
+            current_app.logger.error(f"Database health check failed: {e}")
+            db_status = 'unhealthy'
+        
+        # Check Redis connection (if configured)
+        redis_status = 'not_configured'
+        try:
+            from app.utils.cache import cache_manager
+            if cache_manager.redis_client:
+                cache_manager.redis_client.ping()
+                redis_status = 'healthy'
+        except Exception as e:
+            current_app.logger.error(f"Redis health check failed: {e}")
+            redis_status = 'unhealthy'
+        
+        # Overall health
+        is_healthy = db_status == 'healthy'
+        
+        response = {
+            'status': 'healthy' if is_healthy else 'unhealthy',
+            'timestamp': datetime.datetime.utcnow().isoformat(),
+            'services': {
+                'database': db_status,
+                'redis': redis_status
+            }
+        }
+        
+        return response, 200 if is_healthy else 503
 
 
 @api.route('/athletes')
@@ -241,6 +289,75 @@ class AthleteStats(Resource):
         db.session.commit()
         logging.getLogger(__name__).info("Updated stat %s for athlete %s", name, athlete_id)
         return jsonify(stat.to_dict())
+
+
+@api.route('/external/nba/teams')
+class ExternalNBATeams(Resource):
+    @api.doc(description="Proxy to BallDontLie NBA teams")
+    @require_api_key
+    def get(self):
+        if not (current_app.config.get('NBA_API_TOKEN') or current_app.config.get('BALLDONTLIE_API_TOKEN')):
+            return jsonify({"error": "Missing BallDontLie token. Set NBA_API_TOKEN or BALLDONTLIE_API_TOKEN."}), 400
+        client = NBAAPIClient()
+        return jsonify(client.get_teams())
+
+
+@api.route('/external/mlb/teams')
+class ExternalMLBTeams(Resource):
+    @api.doc(description="Proxy to MLB Stats API teams")
+    @require_api_key
+    def get(self):
+        client = MLBAPIClient()
+        return jsonify(client.get_teams())
+
+
+@api.route('/external/nhl/teams')
+class ExternalNHLTeams(Resource):
+    @api.doc(description="Proxy to NHL Stats API teams")
+    @require_api_key
+    def get(self):
+        client = NHLAPIClient()
+        return jsonify(client.get_teams())
+
+
+@api.route('/external/nfl/teams')
+class ExternalNFLTeams(Resource):
+    @api.doc(description="Proxy to BallDontLie NFL teams")
+    @require_api_key
+    def get(self):
+        if not (current_app.config.get('NFL_API_TOKEN') or current_app.config.get('BALLDONTLIE_API_TOKEN')):
+            return jsonify({"error": "Missing BallDontLie token. Set NFL_API_TOKEN or BALLDONTLIE_API_TOKEN."}), 400
+        client = NFLAPIClient()
+        return jsonify(client.get_teams())
+
+
+# Convenience aliases without the /external prefix
+@api.route('/nba/teams')
+class NBATeams(Resource):
+    @api.doc(description="Proxy to BallDontLie NBA teams")
+    def get(self):
+        return ExternalNBATeams().get()
+
+
+@api.route('/mlb/teams')
+class MLBTeams(Resource):
+    @api.doc(description="Proxy to MLB Stats API teams")
+    def get(self):
+        return ExternalMLBTeams().get()
+
+
+@api.route('/nhl/teams')
+class NHLTeams(Resource):
+    @api.doc(description="Proxy to NHL Stats API teams")
+    def get(self):
+        return ExternalNHLTeams().get()
+
+
+@api.route('/nfl/teams')
+class NFLTeams(Resource):
+    @api.doc(description="Proxy to BallDontLie NFL teams")
+    def get(self):
+        return ExternalNFLTeams().get()
 
 
 @api.route('/athletes/<string:athlete_id>/stats/summary')

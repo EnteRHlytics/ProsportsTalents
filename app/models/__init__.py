@@ -23,3 +23,7 @@ __all__.extend(['Team', 'Game', 'NBATeam', 'NBAGame', 'MLBTeam', 'NFLTeam', 'NHL
 from .sync_log import SyncLog
 
 __all__.append('SyncLog')
+
+from .api_key import ApiKey
+
+__all__.append('ApiKey')

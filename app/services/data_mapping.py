@@ -33,10 +33,11 @@ def map_nba_game(data):
 def map_nfl_team(data):
     """Convert NFL API team data into our NFLTeam schema fields."""
     return {
-        "team_id": data.get("id"),
-        "name": data.get("name"),
-        "abbreviation": data.get("abbreviation"),
-        "city": data.get("city"),
+        # Supports BallDontLie NFL shape and fallback legacy shapes
+        "team_id": data.get("id") or data.get("team_id"),
+        "name": data.get("name") or data.get("full_name") or data.get("nickname"),
+        "abbreviation": data.get("abbreviation") or data.get("abbr"),
+        "city": data.get("city") or data.get("location"),
         "conference": data.get("conference"),
         "division": data.get("division"),
     }

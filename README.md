@@ -16,8 +16,13 @@ This repository contains a Flask API backend and a React frontend used to manage
    - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
    - `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
    - `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` and `AZURE_TENANT_ID`
-   - `NBA_API_TOKEN` optional access token for NBA stats API
-   - `NBA_API_BASE_URL` override base URL for NBA API (optional)
+   - External sports APIs:
+     - `NBA_API_TOKEN` or `BALLDONTLIE_API_TOKEN` (required for BallDontLie NBA)
+     - `NFL_API_TOKEN` or `BALLDONTLIE_API_TOKEN` (required for BallDontLie NFL)
+     - `NBA_API_BASE_URL` (default `https://api.balldontlie.io/v1`)
+     - `NFL_API_BASE_URL` (default `https://api.balldontlie.io/nfl/v1`)
+     - `MLB_API_BASE_URL` (default `https://statsapi.mlb.com/api/v1`)
+     - `NHL_API_BASE_URL` (default `https://statsapi.web.nhl.com/api/v1`)
 ### Initialize the database
 Run database migrations to create all tables:
 

@@ -1,119 +1,129 @@
 from flask import request, jsonify, current_app
-from app.utils.validators import validate_params
-from datetime import date
-from functools import lru_cache
-from sqlalchemy import or_
-
 from flask_restx import Resource
+from sqlalchemy import or_, and_, func
+from datetime import date
+import traceback
+
 from app.api import api
 from app import db
 from app.models import AthleteProfile, User, Sport, Position, AthleteStat
+from app.utils.cache import cached, cache_manager
+from app.utils.validators import validate_params
 
-# Simple in-memory cache for search results
-_SEARCH_CACHE_SIZE = 128
-
-
-def _cache_key(args):
-    key_parts = [f"{k}={v}" for k, v in sorted(args.items())]
-    return '&'.join(key_parts)
-
-
-@lru_cache(maxsize=_SEARCH_CACHE_SIZE)
-def _cached_search(key):
-    """Perform the actual database search using a cache key."""
-    params = dict(item.split('=', 1) for item in key.split('&') if '=' in item)
-    q = params.get('q', '')
-    sport = params.get('sport')
-    position = params.get('position')
-    team = params.get('team')
-    min_age = int(params['min_age']) if 'min_age' in params else None
-    max_age = int(params['max_age']) if 'max_age' in params else None
-    min_height = int(params['min_height']) if 'min_height' in params else None
-    max_height = int(params['max_height']) if 'max_height' in params else None
-    min_weight = float(params['min_weight']) if 'min_weight' in params else None
-    max_weight = float(params['max_weight']) if 'max_weight' in params else None
-    filter_tab = params.get('filter')
-    limit = 50
-
-    query = (
-        AthleteProfile.query.filter_by(is_deleted=False)
-        .join(User)
-        .outerjoin(Sport)
-        .outerjoin(Position)
-    )
-
-    if filter_tab:
-        tab = filter_tab.lower()
-        if tab in {'nba', 'nfl', 'mlb', 'nhl'}:
-            query = query.filter(Sport.code == tab.upper())
-        elif tab == 'available':
-            if hasattr(AthleteProfile, 'contract_active'):
-                query = query.filter(AthleteProfile.contract_active.is_(False))
-        elif tab == 'top':
-            limit = 10
-
-    if sport:
-        if sport.isdigit():
-            query = query.filter(AthleteProfile.primary_sport_id == int(sport))
-        else:
-            query = query.filter(Sport.code.ilike(sport))
-
-    if position:
-        if position.isdigit():
-            query = query.filter(
-                AthleteProfile.primary_position_id == int(position)
+class AthleteSearchOptimized:
+    """Optimized athlete search with advanced filtering and caching"""
+    
+    @staticmethod
+    def build_search_query(params):
+        """Build optimized search query with proper indexing"""
+        try:
+            # Start with base query using eager loading for performance
+            query = (
+                AthleteProfile.query
+                .filter_by(is_deleted=False)
+                .join(User)
+                .outerjoin(Sport)
+                .outerjoin(Position)
+                .options(
+                    db.joinedload(AthleteProfile.user),
+                    db.joinedload(AthleteProfile.primary_sport),
+                    db.joinedload(AthleteProfile.primary_position)
+                )
             )
-        else:
-            pattern = f"%{position}%"
-            query = query.filter(
-                or_(Position.code.ilike(position), Position.name.ilike(pattern))
+            
+            # Apply filters efficiently
+            filters = []
+            
+            # Text search with proper indexing
+            q = params.get('q', '').strip()
+            if q:
+                pattern = f"%{q}%"
+                search_conditions = or_(
+                    User.first_name.ilike(pattern),
+                    User.last_name.ilike(pattern),
+                    func.concat(User.first_name, ' ', User.last_name).ilike(pattern),
+                    Position.name.ilike(pattern),
+                    AthleteProfile.current_team.ilike(pattern)
+                )
+                filters.append(search_conditions)
+            
+            # Sport filter with proper join
+            sport = params.get('sport')
+            if sport:
+                if sport.isdigit():
+                    filters.append(AthleteProfile.primary_sport_id == int(sport))
+                else:
+                    filters.append(Sport.code.ilike(sport))
+            
+            # Position filter
+            position = params.get('position')
+            if position:
+                if position.isdigit():
+                    filters.append(AthleteProfile.primary_position_id == int(position))
+                else:
+                    filters.append(or_(
+                        Position.code.ilike(position),
+                        Position.name.ilike(f"%{position}%")
+                    ))
+            
+            # Team filter
+            team = params.get('team')
+            if team:
+                filters.append(AthleteProfile.current_team.ilike(f"%{team}%"))
+            
+            # Age filters with date calculation
+            today = date.today()
+            min_age = params.get('min_age', type=int)
+            if min_age is not None:
+                cutoff = today.replace(year=today.year - min_age)
+                filters.append(AthleteProfile.date_of_birth <= cutoff)
+            
+            max_age = params.get('max_age', type=int)
+            if max_age is not None:
+                cutoff = today.replace(year=today.year - max_age)
+                filters.append(AthleteProfile.date_of_birth >= cutoff)
+            
+            # Physical attribute filters
+            if params.get('min_height'):
+                filters.append(AthleteProfile.height_cm >= int(params['min_height']))
+            if params.get('max_height'):
+                filters.append(AthleteProfile.height_cm <= int(params['max_height']))
+            if params.get('min_weight'):
+                filters.append(AthleteProfile.weight_kg >= float(params['min_weight']))
+            if params.get('max_weight'):
+                filters.append(AthleteProfile.weight_kg <= float(params['max_weight']))
+            
+            # Tab/filter handling
+            filter_tab = params.get('filter', '').lower()
+            if filter_tab in {'nba', 'nfl', 'mlb', 'nhl'}:
+                filters.append(Sport.code == filter_tab.upper())
+            elif filter_tab == 'available':
+                filters.append(AthleteProfile.contract_active.is_(False))
+            elif filter_tab == 'top':
+                # Limit results for top performers
+                query = query.limit(10)
+            
+            # Apply all filters
+            if filters:
+                query = query.filter(and_(*filters))
+            
+            # Ordering for performance
+            query = query.order_by(
+                AthleteProfile.overall_rating.desc().nullslast(),
+                User.last_name,
+                User.first_name
             )
-
-    if team:
-        query = query.filter(AthleteProfile.current_team.ilike(f"%{team}%"))
-
-    if q:
-        pattern = f"%{q}%"
-        query = query.filter(
-            or_(
-                User.first_name.ilike(pattern),
-                User.last_name.ilike(pattern),
-                Position.name.ilike(pattern),
-                AthleteProfile.current_team.ilike(pattern),
-            )
-        )
-
-    today = date.today()
-    if min_age is not None:
-        cutoff = today.replace(year=today.year - min_age)
-        query = query.filter(AthleteProfile.date_of_birth <= cutoff)
-    if max_age is not None:
-        cutoff = today.replace(year=today.year - max_age)
-        query = query.filter(AthleteProfile.date_of_birth >= cutoff)
-
-    if min_height is not None:
-        query = query.filter(AthleteProfile.height_cm >= min_height)
-    if max_height is not None:
-        query = query.filter(AthleteProfile.height_cm <= max_height)
-
-    if min_weight is not None:
-        query = query.filter(AthleteProfile.weight_kg >= min_weight)
-    if max_weight is not None:
-        query = query.filter(AthleteProfile.weight_kg <= max_weight)
-
-    results = (
-        query.order_by(AthleteProfile.overall_rating.desc())
-        .limit(limit)
-        .all()
-    )
-
-    return [ath.to_dict() for ath in results]
-
+            
+            return query
+            
+        except Exception as e:
+            current_app.logger.error(f"Error building search query: {e}")
+            raise
 
 @api.route('/athletes/search')
 class AthleteSearch(Resource):
-    """Search athletes with optional filters."""
-
+    """Enhanced athlete search endpoint with caching and error handling"""
+    
     @api.doc(params={
         'q': 'Free text search',
         'sport': 'Sport code or id',
@@ -125,96 +135,176 @@ class AthleteSearch(Resource):
         'max_height': 'Maximum height (cm)',
         'min_weight': 'Minimum weight (kg)',
         'max_weight': 'Maximum weight (kg)',
-        'filter': 'Filter tab selection (nba, nfl, mlb, nhl, available, top)',
-    }, description="Search athletes with optional filters")
+        'filter': 'Filter tab (nba, nfl, mlb, nhl, available, top)',
+        'page': 'Page number (default: 1)',
+        'per_page': 'Items per page (default: 50)',
+    })
     @validate_params([])
+    @cached(timeout=60)  # Cache for 1 minute
     def get(self):
-        args = request.args.to_dict(flat=True)
-        key = _cache_key(args)
-        results = _cached_search(key)
-
-        if current_app:
-            current_app.logger.info('search query: %s', key)
-
-        return jsonify({'results': results, 'count': len(results)})
-
-
-def _format_stat_value(value):
-    """Return a formatted string for numeric stats."""
-    try:
-        num = float(value)
-    except (TypeError, ValueError):
-        return str(value)
-    if 0 < num < 1:
-        return f"{num:.3f}".lstrip("0")
-    return f"{num:.1f}" if num % 1 else str(int(num))
-
-
-def _collect_featured_stats(athlete, year):
-    """Gather three key stats for display based on the athlete's sport."""
-    sport = athlete.primary_sport.code if athlete.primary_sport else None
-    mapping = {}
-    if sport == "NBA":
-        mapping = {
-            "PPG": "PointsPerGame",
-            "RPG": "ReboundsPerGame",
-            "APG": "AssistsPerGame",
-        }
-    elif sport == "NFL":
-        mapping = {
-            "PassingYards": "PassingYards",
-            "Touchdowns": "Touchdowns",
-            "QBRating": "QBRating",
-        }
-    elif sport == "MLB":
-        mapping = {
-            "AVG": "BattingAverage",
-            "HR": "HomeRuns",
-            "RBI": "RunsBattedIn",
-        }
-    elif sport == "NHL":
-        mapping = {"Goals": "Goals", "Assists": "Assists", "Points": "Points"}
-
-    stats = []
-    for label, name in mapping.items():
-        stat = AthleteStat.query.filter_by(
-            athlete_id=athlete.athlete_id, name=name, season=str(year)
-        ).first()
-        value = stat.value if stat else "N/A"
-        stats.append({"label": label, "value": _format_stat_value(value)})
-    return stats
-
+        """Search athletes with advanced filtering and pagination"""
+        try:
+            # Get parameters
+            params = request.args.to_dict()
+            page = int(params.get('page', 1))
+            per_page = min(int(params.get('per_page', 50)), 100)  # Max 100 per page
+            
+            # Build optimized query
+            query = AthleteSearchOptimized.build_search_query(params)
+            
+            # Execute with pagination
+            pagination = query.paginate(
+                page=page,
+                per_page=per_page,
+                error_out=False,
+                max_per_page=100
+            )
+            
+            # Format results
+            results = []
+            for athlete in pagination.items:
+                try:
+                    results.append(athlete.to_dict())
+                except Exception as e:
+                    current_app.logger.error(f"Error serializing athlete {athlete.athlete_id}: {e}")
+                    continue
+            
+            # Log search for analytics
+            if current_app.config.get('DEBUG'):
+                current_app.logger.info(f"Search executed: {params}, returned {len(results)} results")
+            
+            return jsonify({
+                'results': results,
+                'count': len(results),
+                'total': pagination.total,
+                'page': page,
+                'pages': pagination.pages,
+                'has_next': pagination.has_next,
+                'has_prev': pagination.has_prev
+            })
+            
+        except Exception as e:
+            current_app.logger.error(f"Search error: {e}\n{traceback.format_exc()}")
+            return jsonify({
+                'error': 'Search failed',
+                'message': str(e) if current_app.config.get('DEBUG') else 'Internal error'
+            }), 500
 
 @api.route('/athletes/featured')
 class FeaturedAthletes(Resource):
-    """Return manually curated featured athletes."""
-
+    """Featured athletes endpoint with optimized queries"""
+    
+    @api.doc(params={'limit': 'Number of athletes to return (default: 6, max: 20)'})
     @validate_params([])
+    @cached(timeout=300)  # Cache for 5 minutes
     def get(self):
-        limit = request.args.get('limit', 6, type=int)
-        athletes = (
-            AthleteProfile.query.filter_by(is_deleted=False, is_featured=True)
-            .join(User)
-            .outerjoin(Sport)
-            .outerjoin(Position)
-            .order_by(AthleteProfile.overall_rating.desc())
-            .limit(limit)
-            .all()
-        )
-        year = date.today().year
-        featured = []
-        for ath in athletes:
-            name = ath.user.full_name if ath.user else ath.athlete_id
-            initials = "".join([n[0] for n in name.split()][:2]).upper()
-            featured.append(
-                {
-                    "name": name,
-                    "position": ath.primary_position.code if ath.primary_position else None,
-                    "team": ath.current_team or "N/A",
-                    "sport": ath.primary_sport.code if ath.primary_sport else None,
-                    "profile_image_url": ath.profile_image_url,
-                    "initials": initials,
-                    "stats": _collect_featured_stats(ath, year),
-                }
+        """Get featured athletes with their latest stats"""
+        try:
+            limit = min(request.args.get('limit', 6, type=int), 20)
+            year = date.today().year
+            
+            # Optimized query with eager loading
+            athletes = (
+                AthleteProfile.query
+                .filter_by(is_deleted=False, is_featured=True)
+                .join(User)
+                .outerjoin(Sport)
+                .outerjoin(Position)
+                .options(
+                    db.joinedload(AthleteProfile.user),
+                    db.joinedload(AthleteProfile.primary_sport),
+                    db.joinedload(AthleteProfile.primary_position),
+                    db.subqueryload(AthleteProfile.stats).filter(
+                        AthleteStat.season == str(year)
+                    )
+                )
+                .order_by(AthleteProfile.overall_rating.desc())
+                .limit(limit)
+                .all()
             )
-        return jsonify(featured)
+            
+            # Format response
+            featured = []
+            for athlete in athletes:
+                try:
+                    name = athlete.user.full_name if athlete.user else f"Athlete {athlete.athlete_id}"
+                    initials = "".join([n[0] for n in name.split()][:2]).upper()
+                    
+                    # Get relevant stats based on sport
+                    stats = self._get_athlete_stats(athlete, year)
+                    
+                    featured.append({
+                        "id": athlete.athlete_id,
+                        "name": name,
+                        "position": athlete.primary_position.code if athlete.primary_position else None,
+                        "team": athlete.current_team or "Free Agent",
+                        "sport": athlete.primary_sport.code if athlete.primary_sport else None,
+                        "profile_image_url": athlete.profile_image_url,
+                        "initials": initials,
+                        "stats": stats,
+                        "rating": float(athlete.overall_rating) if athlete.overall_rating else None
+                    })
+                except Exception as e:
+                    current_app.logger.error(f"Error processing featured athlete {athlete.athlete_id}: {e}")
+                    continue
+            
+            return jsonify(featured)
+            
+        except Exception as e:
+            current_app.logger.error(f"Featured athletes error: {e}\n{traceback.format_exc()}")
+            return jsonify({
+                'error': 'Failed to get featured athletes',
+                'message': str(e) if current_app.config.get('DEBUG') else 'Internal error'
+            }), 500
+    
+    def _get_athlete_stats(self, athlete, year):
+        """Get formatted stats for an athlete"""
+        sport = athlete.primary_sport.code if athlete.primary_sport else None
+        
+        # Define sport-specific stat mappings
+        stat_mappings = {
+            "NBA": [
+                ("PPG", "PointsPerGame"),
+                ("RPG", "ReboundsPerGame"),
+                ("APG", "AssistsPerGame")
+            ],
+            "NFL": [
+                ("Yards", "PassingYards"),
+                ("TD", "Touchdowns"),
+                ("QBR", "QBRating")
+            ],
+            "MLB": [
+                ("AVG", "BattingAverage"),
+                ("HR", "HomeRuns"),
+                ("RBI", "RunsBattedIn")
+            ],
+            "NHL": [
+                ("G", "Goals"),
+                ("A", "Assists"),
+                ("P", "Points")
+            ]
+        }
+        
+        mapping = stat_mappings.get(sport, [])
+        stats = []
+        
+        # Get stats from database
+        stat_dict = {stat.name: stat.value for stat in athlete.stats if stat.season == str(year)}
+        
+        for label, stat_name in mapping:
+            value = stat_dict.get(stat_name, "N/A")
+            if value != "N/A":
+                value = self._format_stat_value(value)
+            stats.append({"label": label, "value": value})
+        
+        return stats
+    
+    def _format_stat_value(self, value):
+        """Format stat value for display"""
+        try:
+            num = float(value)
+            if 0 < num < 1:
+                return f"{num:.3f}".lstrip("0")
+            return f"{num:.1f}" if num % 1 else str(int(num))
+        except (TypeError, ValueError):
+            return str(value)

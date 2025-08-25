@@ -15,4 +15,4 @@ api = Api(
 )
 
 # Import resources to register endpoints with this Api
-from app.api import routes, athletes, skills, rankings  # noqa: E402
+from app.api import routes, athletes, skills, rankings, keys  # noqa: E402
