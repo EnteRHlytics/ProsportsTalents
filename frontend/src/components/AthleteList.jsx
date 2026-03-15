@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import PageWrapper from './layout/PageWrapper';
+import AthleteGrid from './athlete/AthleteGrid';
+import SportFilterTabs from './athlete/SportFilterTabs';
+import SearchBar from './athlete/SearchBar';
+import LoadingSpinner from './ui/LoadingSpinner';
+import ErrorMessage from './ui/ErrorMessage';
 
 export default function AthleteList() {
   const [athletes, setAthletes] = useState([]);
   const [q, setQ] = useState('');
-  const [sport, setSport] = useState('');
+  const [sport, setSport] = useState('ALL');
   const [position, setPosition] = useState('');
   const [team, setTeam] = useState('');
   const [minAge, setMinAge] = useState('');
@@ -19,7 +24,7 @@ export default function AthleteList() {
 
     const params = new URLSearchParams();
     if (q) params.append('q', q);
-    if (sport) params.append('sport', sport);
+    if (sport && sport !== 'ALL') params.append('sport', sport);
     if (position) params.append('position', position);
     if (team) params.append('team', team);
     if (minAge) params.append('min_age', minAge);
@@ -43,66 +48,69 @@ export default function AthleteList() {
     fetchAthletes();
   }, []);
 
+  // Re-fetch when sport filter changes
+  useEffect(() => {
+    fetchAthletes();
+  }, [sport]);
+
   return (
-    <div className="container">
-      <h1>Athletes</h1>
-      <div className="filter-controls">
-        <input
-          type="text"
-          placeholder="Search..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
+    <PageWrapper>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold text-white">Discover Athletes</h1>
+      </div>
+
+      <SportFilterTabs selected={sport} onChange={setSport} />
+
+      {/* Search & filters row */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <div className="flex-1 min-w-[200px]">
+          <SearchBar value={q} onChange={setQ} placeholder="Search all athletes..." />
+        </div>
         <input
           type="text"
           placeholder="Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          className="px-3 py-2 bg-surface-800 border border-surface-600 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent"
         />
         <input
           type="text"
           placeholder="Position"
           value={position}
           onChange={(e) => setPosition(e.target.value)}
+          className="px-3 py-2 bg-surface-800 border border-surface-600 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent w-28"
         />
         <input
           type="text"
           placeholder="Team"
           value={team}
           onChange={(e) => setTeam(e.target.value)}
-        />
-        <input
-          type="text"
-          placeholder="Sport"
-          value={sport}
-          onChange={(e) => setSport(e.target.value)}
+          className="px-3 py-2 bg-surface-800 border border-surface-600 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent w-28"
         />
         <input
           type="number"
           placeholder="Min Age"
           value={minAge}
           onChange={(e) => setMinAge(e.target.value)}
+          className="px-3 py-2 bg-surface-800 border border-surface-600 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent w-24"
         />
         <input
           type="number"
           placeholder="Max Age"
           value={maxAge}
           onChange={(e) => setMaxAge(e.target.value)}
+          className="px-3 py-2 bg-surface-800 border border-surface-600 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent w-24"
         />
-        <button onClick={fetchAthletes}>Search</button>
+        <button
+          onClick={fetchAthletes}
+          className="px-4 py-2 bg-accent hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          Search
+        </button>
       </div>
-      {error && <div style={{ color: 'red' }}>{error}</div>}
-      {loading ? (
-        <div>Loading...</div>
-      ) : (
-        <ul>
-          {athletes.map((a) => (
-            <li key={a.athlete_id}>
-              <Link to={`/athletes/${a.athlete_id}`}>{a.user.full_name}</Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+
+      <ErrorMessage message={error} />
+      {loading ? <LoadingSpinner /> : <AthleteGrid athletes={athletes} />}
+    </PageWrapper>
   );
 }
