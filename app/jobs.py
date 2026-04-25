@@ -4,6 +4,8 @@ import logging
 from app import db
 from app.models import AthleteProfile, NBATeam, NHLTeam, SyncLog
 from app.services import nba_service, nfl_service, mlb_service, nhl_service
+from app.services import gleague_service, milb_service as milb_svc, college_service
+from app.models.prospect import ProspectLeague, MinorLeagueTeam, Prospect
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +67,56 @@ def weekly_sync_player_stats():
         logger.exception("Weekly stats sync failed: %s", exc)
         db.session.rollback()
         _log_sync("weekly_sync_player_stats", False, str(exc))
+
+
+def sync_all_prospects():
+    """Sync G League, MiLB AAA/AA, and NCAA D1 Basketball prospects."""
+    year = date.today().year
+
+    try:
+        # --- G League ---
+        gleague_client = gleague_service.GLeagueAPIClient()
+        gleague_service.sync_gleague_teams(gleague_client)
+        gleague_service.sync_gleague_players(gleague_client)
+
+        gleague_league = ProspectLeague.query.filter_by(code='GLEAGUE').first()
+        if gleague_league:
+            for prospect in Prospect.query.filter_by(
+                prospect_league_id=gleague_league.prospect_league_id, is_deleted=False
+            ).all():
+                gleague_service.sync_gleague_stats(gleague_client, prospect, season=year)
+
+        # --- MiLB AAA and AA ---
+        milb_client = milb_svc.MiLBAPIClient()
+        for league_code, sport_id in [('MILB_AAA', 11), ('MILB_AA', 12)]:
+            milb_svc.sync_milb_teams(milb_client, sport_id, league_code)
+            milb_svc.sync_milb_players(milb_client, sport_id, league_code, season=year)
+
+            league = ProspectLeague.query.filter_by(code=league_code).first()
+            if league:
+                for prospect in Prospect.query.filter_by(
+                    prospect_league_id=league.prospect_league_id, is_deleted=False
+                ).all():
+                    milb_svc.sync_milb_stats(milb_client, prospect, season=year)
+
+        # --- NCAA D1 Basketball ---
+        college_client = college_service.CollegeAPIClient()
+        college_service.sync_college_teams(college_client)
+
+        ncaa_league = ProspectLeague.query.filter_by(code='NCAA_BB_D1').first()
+        if ncaa_league:
+            teams = MinorLeagueTeam.query.filter_by(
+                prospect_league_id=ncaa_league.prospect_league_id
+            ).all()
+            for team in teams:
+                college_service.sync_college_players(college_client, team.external_id)
+
+        logger.info('Prospect sync complete for season %s', year)
+        _log_sync('sync_all_prospects', True, f'season {year}')
+    except Exception as exc:
+        logger.exception('Prospect sync failed: %s', exc)
+        db.session.rollback()
+        _log_sync('sync_all_prospects', False, str(exc))
 
 
 def historical_backfill_stats(seasons=None, num_seasons: int = 3):

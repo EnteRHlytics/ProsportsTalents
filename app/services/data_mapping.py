@@ -83,6 +83,80 @@ def map_nhl_game(data):
     }
 
 
+# --- Prospect data mappings ---
+
+def _inches_to_cm(height_str: str) -> int | None:
+    """Convert ESPN/MLB height string like '6-3' or '6\'3"' to centimetres."""
+    if not height_str:
+        return None
+    try:
+        h = str(height_str).replace('"', '').replace("'", '-').replace(' ', '')
+        if '-' in h:
+            parts = h.split('-')
+            feet, inches = int(parts[0]), int(parts[1]) if len(parts) > 1 else 0
+        else:
+            feet, inches = int(h), 0
+        return round((feet * 12 + inches) * 2.54)
+    except (ValueError, TypeError):
+        return None
+
+
+def _lbs_to_kg(lbs) -> float | None:
+    try:
+        return round(float(lbs) * 0.453592, 2)
+    except (ValueError, TypeError):
+        return None
+
+
+def map_milb_player(data: dict) -> dict:
+    """Convert MLB Stats API people/{id} response to Prospect fields."""
+    primary_pos = (data.get('primaryPosition') or {}).get('abbreviation', '')
+    return {
+        'first_name': data.get('firstName') or data.get('useName', ''),
+        'last_name': data.get('lastName', ''),
+        'position': primary_pos,
+        'date_of_birth': data.get('birthDate'),
+        'nationality': data.get('birthCountry', '')[:3] if data.get('birthCountry') else None,
+        'height_cm': _inches_to_cm(data.get('height', '')),
+        'weight_kg': _lbs_to_kg(data.get('weight')),
+    }
+
+
+def map_gleague_player(data: dict) -> dict:
+    """Convert BallDontLie player response to Prospect fields."""
+    return {
+        'first_name': data.get('first_name', ''),
+        'last_name': data.get('last_name', ''),
+        'position': data.get('position', ''),
+    }
+
+
+def map_ncaa_player(data: dict) -> dict:
+    """Convert ESPN athlete response to Prospect fields."""
+    full = data.get('fullName') or data.get('displayName', '')
+    parts = full.split(' ', 1)
+    pos = (data.get('position') or {}).get('abbreviation', '') if isinstance(data.get('position'), dict) else ''
+    height_str = data.get('height', '')
+    weight_val = data.get('weight')
+    return {
+        'first_name': data.get('firstName') or (parts[0] if parts else ''),
+        'last_name': data.get('lastName') or (parts[1] if len(parts) > 1 else ''),
+        'position': pos,
+        'height_cm': _inches_to_cm(str(height_str)) if height_str else None,
+        'weight_kg': _lbs_to_kg(weight_val),
+    }
+
+
+def map_prospect_stat(api_field: str, stat_name: str, value, stat_type: str, season: str) -> dict:
+    """Build a ProspectStat-compatible dict from raw API values."""
+    return {
+        'name': stat_name,
+        'value': str(value) if value is not None else None,
+        'stat_type': stat_type,
+        'season': season,
+    }
+
+
 def map_player(data):
     """Convert generic player data into AthleteProfile fields.
 

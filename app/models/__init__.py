@@ -24,6 +24,10 @@ from .sync_log import SyncLog
 
 __all__.append('SyncLog')
 
+from .prospect import ProspectLeague, MinorLeagueTeam, Prospect, ProspectStat
+
+__all__.extend(['ProspectLeague', 'MinorLeagueTeam', 'Prospect', 'ProspectStat'])
+
 from .api_key import ApiKey
 
 __all__.append('ApiKey')

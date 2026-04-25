@@ -14,5 +14,8 @@ api = Api(
     doc="/swagger",
 )
 
+# Prospect scouting namespace
+prospects_ns = api.namespace('prospects', description='Prospect scouting')
+
 # Import resources to register endpoints with this Api
-from app.api import routes, athletes, skills, rankings, keys  # noqa: E402
+from app.api import routes, athletes, skills, rankings, keys, prospects  # noqa: E402

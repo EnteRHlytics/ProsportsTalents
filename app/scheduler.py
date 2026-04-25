@@ -21,6 +21,10 @@ def init_scheduler(app: Flask) -> BackgroundScheduler:
         _job(jobs.weekly_sync_player_stats),
         CronTrigger(day_of_week="sun", hour=3),
     )
+    scheduler.add_job(
+        _job(jobs.sync_all_prospects),
+        CronTrigger(day_of_week="sun", hour=4),
+    )
 
     scheduler.start()
     return scheduler

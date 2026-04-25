@@ -47,6 +47,13 @@ class Config:
     NFL_API_TOKEN = os.environ.get("NFL_API_TOKEN") or os.environ.get("BALLDONTLIE_API_TOKEN")
     MLB_API_BASE_URL = os.environ.get("MLB_API_BASE_URL", "https://statsapi.mlb.com/api/v1")
     NHL_API_BASE_URL = os.environ.get("NHL_API_BASE_URL", "https://statsapi.web.nhl.com/api/v1")
+
+    # Prospect / minor league APIs
+    GLEAGUE_API_BASE_URL = os.environ.get("GLEAGUE_API_BASE_URL", "https://api.balldontlie.io/v1")
+    MILB_API_BASE_URL = os.environ.get("MILB_API_BASE_URL", "https://statsapi.mlb.com/api/v1")
+    ESPN_API_BASE_URL = os.environ.get("ESPN_API_BASE_URL", "https://site.api.espn.com/apis/site/v2")
+    ESPN_WEB_API_BASE_URL = os.environ.get("ESPN_WEB_API_BASE_URL", "https://site.web.api.espn.com/apis")
+    PROSPECT_SYNC_NCAA_TEAM_LIMIT = int(os.environ.get("PROSPECT_SYNC_NCAA_TEAM_LIMIT", "50"))
     
     # Application settings
     CLIENT_SATISFACTION_PERCENT = float(os.environ.get('CLIENT_SATISFACTION_PERCENT', '98.7'))
