@@ -1,20 +1,158 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-  margin: 0;
-  padding: 0;
+/* ── DARK MODE (default) ── */
+:root,
+[data-theme="dark"] {
+  --bg-page:         #0f2235;
+  --bg-surface:      #162e47;
+  --bg-surface-alt:  #1c3d5c;
+  --bg-nav:          #0a1a2a;
+  --bg-footer:       #060e18;
+
+  --fg-primary:      #edf3f7;
+  --fg-secondary:    #b0cedb;
+  --fg-tertiary:     #7aaabb;
+  --fg-inverse:      #ffffff;
+
+  --border-subtle:   #1c3d5c;
+  --border-default:  #245070;
+  --border-strong:   #2d6489;
+
+  --navy-900:  #0f2235;
+  --navy-700:  #1c3d5c;
+  --navy-500:  #2d6489;
+  --navy-100:  #162e47;
+  --navy-50:   #1c3d5c;
+
+  --orange-500: #f07a28;
+  --orange-300: #f9bb89;
+  --orange-100: #3a2010;
+
+  --green-500:  #2ea65c;
+  --green-100:  #0e2e1a;
+
+  --steel-500:  #1f7db0;
+  --steel-100:  #0a2030;
+
+  --shadow-xs:  0 1px 2px rgba(0,0,0,0.25);
+  --shadow-sm:  0 2px 6px rgba(0,0,0,0.30);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.40);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.50);
+  --shadow-xl:  0 16px 56px rgba(0,0,0,0.60);
+
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  24px;
+  --radius-full: 9999px;
+
+  --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-body:    'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Courier New', monospace;
+
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ── LIGHT MODE ── */
+[data-theme="light"] {
+  --bg-page:         #f4f6f8;
+  --bg-surface:      #ffffff;
+  --bg-surface-alt:  #f0f6f9;
+  --bg-nav:          #1c3d5c;
+  --bg-footer:       #0f2235;
+
+  --fg-primary:      #1c3d5c;
+  --fg-secondary:    #3d4e62;
+  --fg-tertiary:     #6e839a;
+
+  --border-subtle:   #d8e3ec;
+  --border-default:  #baccda;
+  --border-strong:   #94a8bc;
+
+  --navy-50:   #f0f6f9;
+  --navy-100:  #ddeaf0;
+
+  --orange-100: #fde8d3;
+  --green-100:  #d4f0df;
+  --steel-100:  #cce7f2;
+
+  --shadow-xs:  0 1px 2px rgba(28,63,92,0.06);
+  --shadow-sm:  0 2px 6px rgba(28,63,92,0.08);
+  --shadow-md:  0 4px 16px rgba(28,63,92,0.10);
+  --shadow-lg:  0 8px 32px rgba(28,63,92,0.14);
+  --shadow-xl:  0 16px 56px rgba(28,63,92,0.18);
+}
+
+/* ── BASE ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-page);
+  color: var(--fg-secondary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  transition: background-color var(--transition-slow), color var(--transition-slow);
+}
+
+h1, h2 {
+  font-family: var(--font-display);
+  color: var(--fg-primary);
+  line-height: 1.2;
+}
+
+h3, h4, h5, h6 {
+  font-family: var(--font-body);
+  color: var(--fg-primary);
+}
+
+a { color: var(--navy-500); text-decoration: none; }
+a:hover { color: var(--orange-500); }
+
+button { cursor: pointer; font-family: var(--font-body); }
+input, select, textarea { font-family: var(--font-body); }
+
+img { display: block; max-width: 100%; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-page); }
+::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+/* ── THEME-AWARE TEXT OVERRIDES ── */
+/* In light mode, map the old dark-first text classes to adaptive fg colors */
+[data-theme="light"] .text-white { color: var(--fg-primary) !important; }
+[data-theme="light"] .text-slate-100,
+[data-theme="light"] .text-slate-200 { color: var(--fg-secondary) !important; }
+[data-theme="light"] .text-slate-300 { color: var(--fg-secondary) !important; }
+[data-theme="light"] .text-slate-400 { color: var(--fg-tertiary) !important; }
+[data-theme="light"] .text-slate-500 { color: var(--fg-tertiary) !important; }
+[data-theme="light"] .placeholder-slate-500::placeholder { color: var(--fg-tertiary); }
+[data-theme="light"] .divide-surface-600 > * + * { border-color: var(--border-subtle); }
+
+/* ── ANIMATIONS ── */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── LEGACY CUSTOM CLASSES (kept for compatibility) ── */
 .container {
   max-width: 960px;
   margin: 0 auto;
   padding: 0 1rem;
 }
 
-/* Filters on the athlete list page */
 .filter-controls {
   display: flex;
   flex-wrap: wrap;
@@ -23,20 +161,13 @@ body {
 }
 
 @media (min-width: 600px) {
-  .filter-controls {
-    flex-wrap: nowrap;
-  }
+  .filter-controls { flex-wrap: nowrap; }
 }
 
-/* Profile container styling */
 .profile-container {
   max-width: 600px;
   margin: 0 auto;
   padding: 1rem;
-}
-
-.profile-container h2 {
-  margin-top: 0;
 }
 
 .form-row {
@@ -46,10 +177,7 @@ body {
   align-items: center;
 }
 
-.form-row label {
-  flex: 1 0 150px;
-}
-
+.form-row label { flex: 1 0 150px; }
 .form-row input {
   flex: 2 0 200px;
   padding: 0.5rem;
@@ -57,43 +185,21 @@ body {
 }
 
 @media (max-width: 600px) {
-  .form-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .form-row label {
-    margin-bottom: 0.25rem;
-  }
+  .form-row { flex-direction: column; align-items: flex-start; }
+  .form-row label { margin-bottom: 0.25rem; }
 }
 
-.skill-list,
-.stat-list {
-  list-style: none;
-  padding: 0;
-}
-
-.skill-list li,
-.stat-list li {
+.skill-list, .stat-list { list-style: none; padding: 0; }
+.skill-list li, .stat-list li {
   display: flex;
   justify-content: space-between;
   margin-bottom: 0.5rem;
-
 }
 
-.stat-chart {
-  max-width: 600px;
-  margin-top: 1rem;
-}
+.stat-chart { max-width: 600px; margin-top: 1rem; }
 
-/* Season stats table */
-.season-stats {
-  margin-top: 1rem;
-}
-
-/* Game log table */
-.game-log {
-  margin-top: 1rem;
-}
+.season-stats { margin-top: 1rem; }
+.game-log { margin-top: 1rem; }
 
 .pagination {
   display: flex;
@@ -110,25 +216,29 @@ body {
 
 .stat-table th,
 .stat-table td {
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-subtle);
   padding: 0.5rem;
   text-align: center;
+  color: var(--fg-secondary);
 }
 
 .stat-table th {
-  background: #f0f0f0;
+  background: var(--bg-surface-alt);
+  color: var(--fg-tertiary);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .career-high {
-  background-color: #ffecb3;
+  background-color: var(--orange-100);
   font-weight: bold;
+  color: var(--orange-500) !important;
 }
 
-.stats-section {
-  margin-top: 1rem;
-}
+.stats-section { margin-top: 1rem; }
 
-/* Stats tabs */
 .tabs {
   display: flex;
   gap: 0.5rem;
@@ -138,35 +248,27 @@ body {
 .tab-button {
   padding: 0.5rem 1rem;
   border: none;
-  background: #e0e0e0;
+  background: var(--bg-surface-alt);
+  color: var(--fg-tertiary);
   cursor: pointer;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 13px;
+  transition: all var(--transition);
 }
 
 .tab-button.active {
-  background: #007bff;
+  background: var(--orange-500);
   color: #fff;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
-  /* Allow horizontal scrolling for stat tables on small screens */
   .stat-table {
     display: block;
     overflow-x: auto;
     white-space: nowrap;
   }
-
-  /* Allow tabs to wrap on small screens */
-  .tabs {
-    flex-wrap: wrap;
-  }
-
-  /* Ensure charts scale within mobile viewports */
-  .stat-chart {
-    max-width: 100%;
-  }
-  .stat-chart canvas {
-    width: 100% !important;
-    height: auto !important;
-  }
+  .tabs { flex-wrap: wrap; }
+  .stat-chart { max-width: 100%; }
+  .stat-chart canvas { width: 100% !important; height: auto !important; }
 }

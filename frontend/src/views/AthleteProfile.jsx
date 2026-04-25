@@ -31,14 +31,10 @@ export default function AthleteProfile() {
         return res.json();
       })
       .then((data) => setAthlete(data))
-      .catch((err) => {
-        console.error('Failed to fetch athlete', err);
-        setError('Failed to load athlete');
-      })
+      .catch(() => setError('Failed to load athlete'))
       .finally(() => setLoading(false));
   }, [id]);
 
-  // Load skills for radar tab
   useEffect(() => {
     if (!id) return;
     fetch(`/api/athletes/${id}/skills`)
@@ -50,75 +46,79 @@ export default function AthleteProfile() {
   const handleDelete = () => {
     if (!window.confirm('Delete this athlete?')) return;
     fetch(`/api/athletes/${id}`, { method: 'DELETE' })
-      .then((res) => {
-        if (res.ok) navigate('/discover');
-      })
+      .then((res) => { if (res.ok) navigate('/discover'); })
       .catch((err) => console.error('Failed to delete athlete', err));
   };
 
   if (loading) return <PageWrapper><LoadingSpinner /></PageWrapper>;
-  if (error) return <PageWrapper><ErrorMessage message={error} /></PageWrapper>;
+  if (error)   return <PageWrapper><ErrorMessage message={error} /></PageWrapper>;
   if (!athlete) return <PageWrapper><LoadingSpinner /></PageWrapper>;
 
   const sportCode = athlete.primary_sport?.code;
   const config = getSportConfig(sportCode);
 
   const TABS = [
-    { key: 'summary', label: 'Overview' },
-    { key: 'gameLog', label: 'Game Log' },
-    { key: 'chart', label: 'Charts' },
-    { key: 'radar', label: 'Skills Radar' },
-    { key: 'media', label: 'Media' },
+    { key: 'summary',  label: 'Overview'     },
+    { key: 'gameLog',  label: 'Game Log'      },
+    { key: 'chart',    label: 'Trend Chart'   },
+    { key: 'radar',    label: 'Skills Radar'  },
+    { key: 'media',    label: 'Media'         },
   ];
 
   return (
     <PageWrapper>
       <ProfileHero athlete={athlete} onDelete={handleDelete} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column: editors */}
-        <div className="lg:col-span-1 space-y-4">
-          <div className="bg-surface-800 rounded-xl border border-surface-600 p-4">
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,2fr)', gap: 20 }}>
+        {/* Left: editors */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', padding: 20 }}>
             <SkillEditor athleteId={id} />
           </div>
-          <div className="bg-surface-800 rounded-xl border border-surface-600 p-4">
+          <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', padding: 20 }}>
             <StatEditor athleteId={id} />
           </div>
         </div>
 
-        {/* Right column: stats/charts tabs */}
-        <div className="lg:col-span-2">
-          <div className="bg-surface-800 rounded-xl border border-surface-600 overflow-hidden">
-            {/* Tab bar */}
-            <div className="flex overflow-x-auto border-b border-surface-600">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setStatsTab(tab.key)}
-                  className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
-                    statsTab === tab.key
-                      ? 'text-white border-accent bg-surface-700'
-                      : 'text-slate-400 border-transparent hover:text-slate-200 hover:bg-surface-700'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+        {/* Right: tabs */}
+        <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', overflowX: 'auto' }}>
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setStatsTab(tab.key)}
+                style={{
+                  flexShrink: 0,
+                  padding: '13px 20px',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: `2px solid ${statsTab === tab.key ? config.color : 'transparent'}`,
+                  color: statsTab === tab.key ? 'var(--fg-primary)' : 'var(--fg-tertiary)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-body)',
+                  transition: 'color var(--transition)',
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-            {/* Tab content */}
-            <div className="p-4">
-              {statsTab === 'summary' && <SeasonStats athleteId={id} />}
-              {statsTab === 'gameLog' && <GameLog athleteId={id} />}
-              {statsTab === 'chart' && <StatChart athleteId={id} sportCode={sportCode} />}
-              {statsTab === 'radar' && (
-                <div>
-                  <h3 className="text-sm font-semibold text-white mb-3">Skills Radar</h3>
-                  <SkillRadar skills={skills} color={config.color} label={athlete.user?.full_name || 'Skills'} />
+          <div style={{ padding: 20 }}>
+            {statsTab === 'summary'  && <SeasonStats athleteId={id} />}
+            {statsTab === 'gameLog'  && <GameLog athleteId={id} />}
+            {statsTab === 'chart'    && <StatChart athleteId={id} sportCode={sportCode} />}
+            {statsTab === 'radar'    && (
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg-primary)', marginBottom: 16 }}>
+                  Skills Radar — {athlete.user?.full_name || 'Athlete'}
                 </div>
-              )}
-              {statsTab === 'media' && <MediaGallery athleteId={id} />}
-            </div>
+                <SkillRadar skills={skills} color={config.color} label={athlete.user?.full_name || 'Skills'} />
+              </div>
+            )}
+            {statsTab === 'media'    && <MediaGallery athleteId={id} />}
           </div>
         </div>
       </div>

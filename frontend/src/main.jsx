@@ -4,7 +4,9 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 
-document.documentElement.classList.add('dark');
+// Set initial theme from localStorage, default to dark
+const saved = (() => { try { return localStorage.getItem('pst-theme'); } catch { return null; } })();
+document.documentElement.setAttribute('data-theme', saved || 'dark');
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

@@ -6,6 +6,18 @@ import SearchBar from './athlete/SearchBar';
 import LoadingSpinner from './ui/LoadingSpinner';
 import ErrorMessage from './ui/ErrorMessage';
 
+const inputStyle = {
+  padding: '9px 12px',
+  background: 'var(--bg-surface)',
+  border: '1px solid var(--border-default)',
+  borderRadius: 'var(--radius-md)',
+  fontSize: 13,
+  color: 'var(--fg-primary)',
+  outline: 'none',
+  fontFamily: 'var(--font-body)',
+  transition: 'border-color var(--transition)',
+};
+
 export default function AthleteList() {
   const [athletes, setAthletes] = useState([]);
   const [q, setQ] = useState('');
@@ -21,7 +33,6 @@ export default function AthleteList() {
   const fetchAthletes = () => {
     setLoading(true);
     setError(null);
-
     const params = new URLSearchParams();
     if (q) params.append('q', q);
     if (sport && sport !== 'ALL') params.append('sport', sport);
@@ -30,40 +41,33 @@ export default function AthleteList() {
     if (minAge) params.append('min_age', minAge);
     if (maxAge) params.append('max_age', maxAge);
     if (name) params.append('name', name);
-
     fetch(`/api/athletes/search?${params.toString()}`)
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch');
         return res.json();
       })
       .then((data) => setAthletes(data.results || []))
-      .catch((err) => {
-        console.error('Failed to fetch athletes', err);
-        setError('Failed to fetch athletes');
-      })
+      .catch(() => setError('Failed to fetch athletes'))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => {
-    fetchAthletes();
-  }, []);
-
-  // Re-fetch when sport filter changes
-  useEffect(() => {
-    fetchAthletes();
-  }, [sport]);
+  useEffect(() => { fetchAthletes(); }, []);
+  useEffect(() => { fetchAthletes(); }, [sport]);
 
   return (
     <PageWrapper>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-white">Discover Athletes</h1>
-      </div>
+      <h1 style={{ fontSize: 38, marginBottom: 6, fontFamily: 'var(--font-display)', color: 'var(--fg-primary)' }}>
+        Discover Athletes
+      </h1>
+      <p style={{ color: 'var(--fg-tertiary)', marginBottom: 28, fontSize: 15 }}>
+        Browse professional athletes across 5 sports leagues.
+      </p>
 
       <SportFilterTabs selected={sport} onChange={setSport} />
 
-      {/* Search & filters row */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        <div className="flex-1 min-w-[200px]">
+      {/* Search & filters */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 24, alignItems: 'center' }}>
+        <div style={{ flex: '1 1 240px', minWidth: 200 }}>
           <SearchBar value={q} onChange={setQ} placeholder="Search all athletes..." />
         </div>
         <input
@@ -71,43 +75,72 @@ export default function AthleteList() {
           placeholder="Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="px-3 py-2 bg-surface-800 border border-surface-600 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent"
+          style={inputStyle}
+          onFocus={e => e.target.style.borderColor = 'var(--navy-500)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border-default)'}
         />
         <input
           type="text"
           placeholder="Position"
           value={position}
           onChange={(e) => setPosition(e.target.value)}
-          className="px-3 py-2 bg-surface-800 border border-surface-600 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent w-28"
+          style={{ ...inputStyle, width: 110 }}
+          onFocus={e => e.target.style.borderColor = 'var(--navy-500)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border-default)'}
         />
         <input
           type="text"
           placeholder="Team"
           value={team}
           onChange={(e) => setTeam(e.target.value)}
-          className="px-3 py-2 bg-surface-800 border border-surface-600 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent w-28"
+          style={{ ...inputStyle, width: 110 }}
+          onFocus={e => e.target.style.borderColor = 'var(--navy-500)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border-default)'}
         />
         <input
           type="number"
           placeholder="Min Age"
           value={minAge}
           onChange={(e) => setMinAge(e.target.value)}
-          className="px-3 py-2 bg-surface-800 border border-surface-600 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent w-24"
+          style={{ ...inputStyle, width: 90 }}
+          onFocus={e => e.target.style.borderColor = 'var(--navy-500)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border-default)'}
         />
         <input
           type="number"
           placeholder="Max Age"
           value={maxAge}
           onChange={(e) => setMaxAge(e.target.value)}
-          className="px-3 py-2 bg-surface-800 border border-surface-600 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent w-24"
+          style={{ ...inputStyle, width: 90 }}
+          onFocus={e => e.target.style.borderColor = 'var(--navy-500)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border-default)'}
         />
         <button
           onClick={fetchAthletes}
-          className="px-4 py-2 bg-accent hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
+          style={{
+            padding: '9px 18px',
+            background: 'var(--orange-500)',
+            color: '#fff',
+            fontSize: 13,
+            fontWeight: 600,
+            borderRadius: 'var(--radius-md)',
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-body)',
+            transition: 'opacity var(--transition)',
+          }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
         >
           Search
         </button>
       </div>
+
+      {athletes.length > 0 && (
+        <div style={{ fontSize: 13, color: 'var(--fg-tertiary)', marginBottom: 16 }}>
+          {athletes.length} athlete{athletes.length !== 1 ? 's' : ''} found
+        </div>
+      )}
 
       <ErrorMessage message={error} />
       {loading ? <LoadingSpinner /> : <AthleteGrid athletes={athletes} />}
