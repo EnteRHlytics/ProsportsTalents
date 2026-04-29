@@ -10,6 +10,7 @@ import AthleteForm from './components/AthleteForm';
 import ComparePage from './views/ComparePage';
 import ProspectList from './views/ProspectList';
 import ProspectProfile from './views/ProspectProfile';
+import ProspectForm from './components/prospect/ProspectForm';
 
 export default function App() {
   const [theme, setTheme] = useState(() => {
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/athletes/:id/edit" element={<AthleteForm />} />
             <Route path="/athletes/:id" element={<AthleteProfile />} />
             <Route path="/prospects" element={<ProspectList />} />
+            <Route path="/prospects/new" element={<ProspectForm />} />
             <Route path="/prospects/:id" element={<ProspectProfile />} />
           </Routes>
         </div>
