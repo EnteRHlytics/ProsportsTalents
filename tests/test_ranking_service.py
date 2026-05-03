@@ -287,3 +287,147 @@ def test_weighted_sum_matches_components():
         row["components"][k] * weights[k] for k in rs.COMPONENT_KEYS
     )
     assert row["score"] == pytest.approx(round(expected, 2), abs=0.01)
+
+
+# ---------------------------------------------------------------------------
+# Wave-3: real-data inputs (fan_perception_real / market_value_real)
+# ---------------------------------------------------------------------------
+
+
+def test_fan_perception_real_overrides_placeholder_heuristic():
+    """When ``fan_perception_real`` is supplied the placeholder is bypassed."""
+    record = _athlete("a", "Real", "NBA", is_featured=True, is_verified=True)
+    placeholder = rs._fan_perception_score(record)
+    record_with_real = dict(record, fan_perception_real=12.5)
+    real = rs._fan_perception_score(record_with_real)
+    assert placeholder == pytest.approx(80.0, abs=0.01)
+    assert real == pytest.approx(12.5, abs=0.01)
+
+
+def test_fan_perception_falls_back_to_heuristic_when_real_is_none():
+    """``fan_perception_real`` of None must defer to the legacy heuristic."""
+    plain = _athlete("a", "Plain", "NBA", fan_perception_real=None) \
+        if False else dict(_athlete("a", "Plain", "NBA"), fan_perception_real=None)
+    # Plain dict-record with fan_perception_real=None must still get the
+    # 50.0 baseline.
+    assert rs._fan_perception_score(plain) == 50.0
+
+
+def test_market_value_real_overrides_placeholder_heuristic():
+    record = dict(
+        _athlete("a", "Real", "NBA", overall_rating=80, years_professional=8),
+        market_value_real=22.5,
+    )
+    assert rs._market_value_score(record) == pytest.approx(22.5, abs=0.01)
+
+
+def test_market_value_falls_back_to_heuristic_when_real_is_none():
+    record = dict(
+        _athlete("a", "Real", "NBA", overall_rating=80, years_professional=8),
+        market_value_real=None,
+    )
+    # 80 * 1.0 (peak experience curve) = 80
+    assert rs._market_value_score(record) == pytest.approx(80.0, abs=0.01)
+
+
+def test_compute_rankings_consumes_real_signals():
+    """End-to-end: setting both real keys flips the leaderboard."""
+    base_stats = [_stat("PointsPerGame", "20"), _stat("GamesPlayed", "60")]
+    a = dict(
+        _athlete("a", "Alpha", "NBA", stats=base_stats),
+        fan_perception_real=10.0,
+        market_value_real=10.0,
+    )
+    b = dict(
+        _athlete("b", "Bravo", "NBA", stats=base_stats),
+        fan_perception_real=95.0,
+        market_value_real=95.0,
+    )
+    result = rs.compute_rankings(
+        [a, b],
+        weights={"fan_perception": 0.5, "market_value": 0.5},
+    )
+    assert result[0]["name"] == "Bravo"
+
+
+def test_build_athlete_record_calls_real_services(monkeypatch):
+    """``build_athlete_record`` must consult both real services and inject
+    their results into the record under ``*_real`` keys.  Failures must
+    degrade silently (real key set to None)."""
+    fp_calls = []
+    mv_calls = []
+
+    class _StubAthlete:
+        athlete_id = "ath-9"
+        overall_rating = 80
+        years_professional = 8
+        is_featured = False
+        is_verified = False
+        primary_sport = type("S", (), {"code": "NBA"})()
+        user = type("U", (), {"full_name": "Test"})()
+        stats = []
+
+    import sys
+    fp_mod = type(sys)("fp_stub")
+
+    def _compute_fp(athlete, **_):
+        fp_calls.append(athlete.athlete_id)
+        return 33.3
+
+    fp_mod.compute_fan_perception_score = _compute_fp
+    sys.modules["app.services.fan_perception_service"] = fp_mod
+
+    mv_mod = type(sys)("mv_stub")
+
+    def _compute_mv(athlete, **_):
+        mv_calls.append(athlete.athlete_id)
+        return 44.4
+
+    mv_mod.compute_market_value_score = _compute_mv
+    sys.modules["app.services.market_value_service"] = mv_mod
+
+    try:
+        rec = rs.build_athlete_record(_StubAthlete())
+        assert rec["fan_perception_real"] == 33.3
+        assert rec["market_value_real"] == 44.4
+        assert fp_calls == ["ath-9"]
+        assert mv_calls == ["ath-9"]
+    finally:
+        sys.modules.pop("app.services.fan_perception_service", None)
+        sys.modules.pop("app.services.market_value_service", None)
+
+
+def test_build_athlete_record_handles_real_service_failure(monkeypatch):
+    """When a real service raises, the record's *_real key must be None
+    (so the placeholder heuristic is used downstream)."""
+
+    class _StubAthlete:
+        athlete_id = "ath-9"
+        overall_rating = 80
+        years_professional = 8
+        is_featured = False
+        is_verified = False
+        primary_sport = type("S", (), {"code": "NBA"})()
+        user = type("U", (), {"full_name": "Test"})()
+        stats = []
+
+    import sys
+    fp_mod = type(sys)("fp_stub2")
+
+    def _boom(_a, **_):
+        raise RuntimeError("upstream down")
+
+    fp_mod.compute_fan_perception_score = _boom
+    sys.modules["app.services.fan_perception_service"] = fp_mod
+
+    mv_mod = type(sys)("mv_stub2")
+    mv_mod.compute_market_value_score = _boom
+    sys.modules["app.services.market_value_service"] = mv_mod
+
+    try:
+        rec = rs.build_athlete_record(_StubAthlete())
+        assert rec["fan_perception_real"] is None
+        assert rec["market_value_real"] is None
+    finally:
+        sys.modules.pop("app.services.fan_perception_service", None)
+        sys.modules.pop("app.services.market_value_service", None)

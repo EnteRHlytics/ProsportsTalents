@@ -31,3 +31,7 @@ __all__.extend(['ProspectLeague', 'MinorLeagueTeam', 'Prospect', 'ProspectStat']
 from .api_key import ApiKey
 
 __all__.append('ApiKey')
+
+from .fan_perception_score import FanPerceptionScore
+
+__all__.append('FanPerceptionScore')

@@ -17,13 +17,28 @@ Five independent component scores are computed in the [0, 100] range:
                           50.0 neutral score when the underlying stats are
                           unavailable.
 * ``durability``        - games played / season availability.
-* ``fan_perception``    - placeholder.  Currently uses a flat 50.0 baseline
-                          with a small bump for ``is_featured`` / verified
-                          athletes.  Will be replaced once a survey or
-                          social-sentiment data source lands.
-* ``market_value``      - placeholder.  Approximated from career experience
-                          and overall rating.  Will be replaced when contract
-                          / endorsement data is available.
+* ``fan_perception``    - real signal when available
+                          (Wikipedia pageviews + Reddit mentions, see
+                          :mod:`app.services.fan_perception_service`).
+                          Falls back to a flat 50.0 baseline with a small
+                          bump for ``is_featured`` / verified athletes
+                          when no real data is available.
+* ``market_value``      - real signal when available (agency-supplied
+                          ``salary_usd`` + ``endorsements_usd`` +
+                          ``contract_end_date``, see
+                          :mod:`app.services.market_value_service`).
+                          Falls back to ``overall_rating * experience_curve``
+                          when those columns are blank.
+
+Wave-3 update
+~~~~~~~~~~~~~
+``build_athlete_record`` now attempts to pre-compute real fan-perception
+and market-value scores from the ORM athlete and stores them in the
+record under the ``fan_perception_real`` and ``market_value_real`` keys.
+The ``_fan_perception_score`` / ``_market_value_score`` helpers consume
+those keys when present, otherwise they apply the legacy heuristics.
+The ranking *formula* and *weights* are unchanged - only the inputs to
+those two components.
 
 The final score is the weighted sum of the components, and weights default
 to ``{performance: 0.4, efficiency: 0.2, durability: 0.2,
@@ -234,7 +249,19 @@ def _durability_score(record: Mapping[str, Any]) -> float:
 
 
 def _fan_perception_score(record: Mapping[str, Any]) -> float:
-    """Placeholder - see module docstring."""
+    """Real signal when ``fan_perception_real`` is set, else fallback heuristic.
+
+    The ORM adapter (:func:`build_athlete_record`) calls
+    :func:`app.services.fan_perception_service.compute_fan_perception_score`
+    and stores the result under ``fan_perception_real``.  When that real
+    score is missing or ``None`` we apply the legacy ``50 + 20*featured +
+    10*verified`` heuristic so dict-only callers and offline tests still
+    work.
+    """
+    real = _to_float(record.get("fan_perception_real"))
+    if real is not None:
+        return _clamp(real)
+
     base = 50.0
     if record.get("is_featured"):
         base += 20.0
@@ -244,7 +271,17 @@ def _fan_perception_score(record: Mapping[str, Any]) -> float:
 
 
 def _market_value_score(record: Mapping[str, Any]) -> float:
-    """Placeholder - see module docstring."""
+    """Real signal when ``market_value_real`` is set, else fallback heuristic.
+
+    The ORM adapter calls
+    :func:`app.services.market_value_service.compute_market_value_score`
+    and stores the result under ``market_value_real``.  Missing data
+    falls back to ``overall_rating * experience_curve``.
+    """
+    real = _to_float(record.get("market_value_real"))
+    if real is not None:
+        return _clamp(real)
+
     rating = _to_float(record.get("overall_rating")) or 0.0
     years = _to_float(record.get("years_professional")) or 0.0
     # Experience curve: peaks around 8 years.
@@ -331,6 +368,12 @@ def build_athlete_record(athlete) -> Dict[str, Any]:
     """Convert an :class:`AthleteProfile` ORM row to the algorithm's input.
 
     The function is tolerant of missing relationships and stat collections.
+
+    Wave-3: also calls the real fan-perception and market-value services
+    and stores their results under ``fan_perception_real`` /
+    ``market_value_real`` so the component scorers can use real data
+    instead of the legacy placeholders.  Service failures degrade
+    silently to the legacy heuristic.
     """
     name = None
     user = getattr(athlete, "user", None)
@@ -353,6 +396,27 @@ def build_athlete_record(athlete) -> Dict[str, Any]:
             "season": getattr(s, "season", None),
         })
 
+    # Wave-3: pull real signals when available.  Both services already
+    # return ``None`` on missing data / upstream failure, but we wrap them
+    # in ``try/except`` for total isolation - a bug in either must never
+    # crash the ranking pipeline.
+    fan_real: Optional[float] = None
+    market_real: Optional[float] = None
+    try:
+        from app.services.fan_perception_service import (
+            compute_fan_perception_score,
+        )
+        fan_real = compute_fan_perception_score(athlete)
+    except Exception:  # pragma: no cover - defensive
+        fan_real = None
+    try:
+        from app.services.market_value_service import (
+            compute_market_value_score,
+        )
+        market_real = compute_market_value_score(athlete)
+    except Exception:  # pragma: no cover - defensive
+        market_real = None
+
     return {
         "athlete_id": getattr(athlete, "athlete_id", None),
         "name": name,
@@ -362,4 +426,6 @@ def build_athlete_record(athlete) -> Dict[str, Any]:
         "is_featured": bool(getattr(athlete, "is_featured", False)),
         "is_verified": bool(getattr(athlete, "is_verified", False)),
         "stats": stats,
+        "fan_perception_real": fan_real,
+        "market_value_real": market_real,
     }
