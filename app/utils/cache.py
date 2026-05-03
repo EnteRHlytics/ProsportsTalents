@@ -1,12 +1,9 @@
 """Cache manager stub.
 
-NOTE (Agent5): This is a minimal stub required because ``app/utils/__init__.py``
-and ``app/__init__.py`` import ``cache_manager``/``cached`` from this module,
-but the actual cache implementation appears to belong to another agent.
-
-If a richer caching layer is supplied later, this stub can be replaced.
-The stub is import-safe and provides a no-op ``init_app`` plus a passthrough
-``cached`` decorator so the application boots and tests can run.
+Minimal no-op cache so the application boots in environments without a Redis
+backend (unit tests, local dev). ``app/utils/__init__.py`` and ``app/__init__.py``
+import ``cache_manager``/``cached`` from this module — when a real cache
+implementation lands, replace this stub.
 """
 
 from functools import wraps
@@ -20,11 +17,9 @@ class _NoOpCacheManager:
         self.redis_client = None
         self.app = None
 
-    def init_app(self, app) -> None:  # noqa: D401 - simple proxy
-        """Attach to the Flask app. No backend is configured."""
+    def init_app(self, app) -> None:
         self.app = app
 
-    # Minimal interface other call sites may rely on
     def get(self, key: str) -> Optional[Any]:
         return None
 
