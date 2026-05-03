@@ -427,5 +427,46 @@ def backfill_stats_cmd(seasons: int):
     from app import jobs
     jobs.historical_backfill_stats(num_seasons=seasons)
 
+
+@app.cli.command('create-api-key')
+@click.argument('user_email')
+@click.option('--name', default='cli-issued', help='Display name for the new key')
+@click.option(
+    '--scopes',
+    default=None,
+    help='Comma-separated list of scopes to attach to the key',
+)
+@with_appcontext
+def create_api_key_cmd(user_email: str, name: str, scopes):
+    """Create an API key for an existing user.
+
+    Prints the raw key on stdout - this is the only chance to capture it.
+    """
+    from app.models import ApiKey, User
+
+    user = User.query.filter_by(email=user_email).first()
+    if user is None:
+        raise click.ClickException(f'No user with email {user_email!r}')
+
+    scope_list = None
+    if scopes:
+        scope_list = [s.strip() for s in scopes.split(',') if s.strip()]
+
+    record, raw_key = ApiKey.generate(
+        user_id=user.user_id, name=name, scopes=scope_list
+    )
+    db.session.add(record)
+    db.session.commit()
+
+    click.echo(f'API key created for {user_email}')
+    click.echo(f'  api_key_id: {record.api_key_id}')
+    click.echo(f'  name:       {record.name}')
+    click.echo(f'  prefix:     {record.key_prefix}')
+    if scope_list:
+        click.echo(f'  scopes:     {",".join(scope_list)}')
+    click.echo(f'  key:        {raw_key}')
+    click.echo('Save this key now - it will not be shown again.')
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
