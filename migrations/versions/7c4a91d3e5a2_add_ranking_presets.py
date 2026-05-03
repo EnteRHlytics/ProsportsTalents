@@ -1,7 +1,7 @@
 """Add ranking_presets table
 
 Revision ID: 7c4a91d3e5a2
-Revises: f29d5d6ebc1b
+Revises: a2c4e1d9b0f5
 Create Date: 2026-05-02 00:00:00.000000
 """
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '7c4a91d3e5a2'
-down_revision = 'f29d5d6ebc1b'
+down_revision = 'a2c4e1d9b0f5'
 branch_labels = None
 depends_on = None
 

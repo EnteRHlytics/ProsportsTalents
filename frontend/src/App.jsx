@@ -11,6 +11,9 @@ import ComparePage from './views/ComparePage';
 import ProspectList from './views/ProspectList';
 import ProspectProfile from './views/ProspectProfile';
 import ProspectForm from './components/prospect/ProspectForm';
+import Discover from './views/Discover';
+import Rankings from './views/Rankings';
+import RankingsCustomize from './views/RankingsCustomize';
 
 export default function App() {
   const [theme, setTheme] = useState(() => {
@@ -33,8 +36,11 @@ export default function App() {
         <div className="flex-1">
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/discover" element={<AthleteList />} />
+            <Route path="/discover" element={<Discover />} />
+            <Route path="/discover/legacy" element={<AthleteList />} />
             <Route path="/compare" element={<ComparePage />} />
+            <Route path="/rankings" element={<Rankings />} />
+            <Route path="/rankings/customize" element={<RankingsCustomize />} />
             <Route path="/athletes/new" element={<AthleteForm />} />
             <Route path="/athletes/:id/edit" element={<AthleteForm />} />
             <Route path="/athletes/:id" element={<AthleteProfile />} />

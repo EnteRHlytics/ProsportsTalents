@@ -1,7 +1,7 @@
 """add activity_logs table
 
 Revision ID: a5b1c0d2e3f4
-Revises: f29d5d6ebc1b
+Revises: 7c4a91d3e5a2
 Create Date: 2026-05-02 00:00:00.000000
 """
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'a5b1c0d2e3f4'
-down_revision = 'f29d5d6ebc1b'
+down_revision = '7c4a91d3e5a2'
 branch_labels = None
 depends_on = None
 

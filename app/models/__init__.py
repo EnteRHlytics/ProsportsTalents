@@ -31,3 +31,15 @@ __all__.extend(['ProspectLeague', 'MinorLeagueTeam', 'Prospect', 'ProspectStat']
 from .api_key import ApiKey
 
 __all__.append('ApiKey')
+
+from .saved_search import SavedSearch
+
+__all__.append('SavedSearch')
+
+from .ranking_preset import RankingPreset
+
+__all__.append('RankingPreset')
+
+from .activity_log import ActivityLog
+
+__all__.append('ActivityLog')
