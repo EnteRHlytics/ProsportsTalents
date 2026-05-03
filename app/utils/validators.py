@@ -1,6 +1,8 @@
 from functools import wraps
-from flask import request, jsonify
-from marshmallow import Schema, fields, ValidationError
+
+from flask import jsonify, request
+from marshmallow import Schema, ValidationError, fields
+
 
 def validate_params(required_params):
     """Decorator to validate request parameters.

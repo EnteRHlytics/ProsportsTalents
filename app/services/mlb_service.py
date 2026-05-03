@@ -1,15 +1,15 @@
 import logging
-from typing import Optional
 
 import requests
-from flask import current_app
 from cachelib import SimpleCache
-from .http_utils import request_with_retry
-from .rate_limit import RateLimiter
+from flask import current_app
 
 from app import db
-from app.models import MLBTeam, AthleteProfile, AthleteStat
+from app.models import AthleteProfile, AthleteStat, MLBTeam
+
 from .data_mapping import map_mlb_team
+from .http_utils import request_with_retry
+from .rate_limit import RateLimiter
 
 
 class MLBAPIClient:
@@ -17,7 +17,7 @@ class MLBAPIClient:
 
     def __init__(
         self,
-        base_url: Optional[str] = None,
+        base_url: str | None = None,
         rate_limit_interval: float = 1.0,
         cache_timeout: int = 3600,
     ):
@@ -35,7 +35,7 @@ class MLBAPIClient:
         self.rate_limiter = RateLimiter(rate_limit_interval)
         self.cache = SimpleCache(default_timeout=cache_timeout)
 
-    def _get(self, endpoint: str, params: Optional[dict] = None):
+    def _get(self, endpoint: str, params: dict | None = None):
         """Perform GET with retry and handle errors."""
         url = f"{self.base_url}{endpoint}"
         try:
@@ -70,7 +70,7 @@ class MLBAPIClient:
         self.cache.set("teams", teams)
         return teams
 
-    def get_player_stats(self, player_id: int, season: Optional[int] = None, group: str = "hitting"):
+    def get_player_stats(self, player_id: int, season: int | None = None, group: str = "hitting"):
         params = {"stats": "season", "group": group}
         if season:
             params["season"] = season
@@ -101,7 +101,7 @@ def sync_teams(client: MLBAPIClient):
     return teams
 
 
-def sync_player_stats(client: MLBAPIClient, athlete: AthleteProfile, season: Optional[int] = None):
+def sync_player_stats(client: MLBAPIClient, athlete: AthleteProfile, season: int | None = None):
     """Fetch MLB stats for an athlete and store them."""
     player_id = getattr(athlete, "mlb_player_id", None)
     if not player_id:

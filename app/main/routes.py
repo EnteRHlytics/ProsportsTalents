@@ -1,13 +1,15 @@
-from flask import render_template, request, current_app, redirect, url_for, flash
+from datetime import date, datetime, timedelta
+
+from flask import current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import func
-from datetime import datetime, timedelta, date
+
 from app import db
-from app.models import AthleteProfile, AthleteStat, AthleteMedia, User, Sport, Position
-from app.services.media_service import MediaService
 from app.api.rankings import _dynamic_rankings, _load_rankings
-from app.utils.auth import oauth_session_required
 from app.main import bp
+from app.models import AthleteMedia, AthleteProfile, AthleteStat, Position, Sport, User
+from app.services.media_service import MediaService
+from app.utils.auth import oauth_session_required
 
 
 def _format_stat_value(value):

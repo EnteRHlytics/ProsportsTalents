@@ -1,15 +1,15 @@
 import logging
-from typing import Optional
 
 import requests
-from flask import current_app
 from cachelib import SimpleCache
-from .http_utils import request_with_retry
-from .rate_limit import RateLimiter
+from flask import current_app
 
 from app import db
-from app.models import NHLTeam, NHLGame, AthleteProfile, AthleteStat
-from .data_mapping import map_nhl_team, map_nhl_game
+from app.models import AthleteProfile, AthleteStat, NHLGame, NHLTeam
+
+from .data_mapping import map_nhl_game, map_nhl_team
+from .http_utils import request_with_retry
+from .rate_limit import RateLimiter
 
 
 class NHLAPIClient:
@@ -17,7 +17,7 @@ class NHLAPIClient:
 
     def __init__(
         self,
-        base_url: Optional[str] = None,
+        base_url: str | None = None,
         rate_limit_interval: float = 1.0,
         cache_timeout: int = 3600,
     ):
@@ -33,7 +33,7 @@ class NHLAPIClient:
         self.rate_limiter = RateLimiter(rate_limit_interval)
         self.cache = SimpleCache(default_timeout=cache_timeout)
 
-    def _get(self, endpoint: str, params: Optional[dict] = None):
+    def _get(self, endpoint: str, params: dict | None = None):
         """Perform GET with retry and handle errors."""
         url = f"{self.base_url}{endpoint}"
         try:
@@ -77,7 +77,7 @@ class NHLAPIClient:
         self.cache.set("standings", records)
         return records
 
-    def get_games(self, team_id: int, season: Optional[str] = None):
+    def get_games(self, team_id: int, season: str | None = None):
         params = {"teamId": team_id}
         if season:
             params["season"] = season
@@ -92,7 +92,7 @@ class NHLAPIClient:
         self.cache.set(key, games)
         return games
 
-    def get_player_stats(self, player_id: int, season: Optional[str] = None):
+    def get_player_stats(self, player_id: int, season: str | None = None):
         params = {"stats": "statsSingleSeason"}
         if season:
             params["season"] = season
@@ -143,7 +143,7 @@ def sync_standings(client: NHLAPIClient):
     return records
 
 
-def sync_games(client: NHLAPIClient, team_id: int, season: Optional[str] = None):
+def sync_games(client: NHLAPIClient, team_id: int, season: str | None = None):
     """Fetch schedule for a team and store the games."""
     games = client.get_games(team_id=team_id, season=season)
     for g in games:
@@ -166,7 +166,7 @@ def sync_games(client: NHLAPIClient, team_id: int, season: Optional[str] = None)
 
 
 def sync_player_stats(
-    client: NHLAPIClient, athlete: AthleteProfile, season: Optional[str] = None
+    client: NHLAPIClient, athlete: AthleteProfile, season: str | None = None
 ):
     """Fetch NHL stats for an athlete and store them."""
     player_id = getattr(athlete, "nhl_player_id", None)

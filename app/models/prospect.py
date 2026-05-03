@@ -6,8 +6,8 @@ SQLAlchemy models so the application can boot and unrelated tests can run.
 They should be overwritten by the owning agent's real implementation.
 """
 
-from datetime import datetime
 import uuid
+from datetime import datetime
 
 from app import db
 

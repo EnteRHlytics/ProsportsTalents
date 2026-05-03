@@ -17,19 +17,18 @@ from flask import Response, current_app, jsonify, request, send_file
 from flask_restx import Namespace, Resource
 
 from app import db
-from app.models import AthleteProfile, AthleteStat, User, Sport, Position
-from app.services.pdf_export import (
-    athlete_profile_pdf,
-    rankings_pdf,
-    search_results_pdf,
-)
+from app.models import AthleteProfile, Position, Sport, User
 from app.services.excel_export import (
     athlete_profile_xlsx,
     rankings_xlsx,
     search_results_xlsx,
 )
+from app.services.pdf_export import (
+    athlete_profile_pdf,
+    rankings_pdf,
+    search_results_pdf,
+)
 from app.utils.auth import login_or_token_required
-
 
 # Public namespace — registered with the main Api in app/api/__init__.py.
 ns = Namespace("exports", description="PDF and Excel export endpoints")
@@ -71,8 +70,9 @@ def _safe_filename(name: str, suffix: str) -> str:
 
 def _search_athletes_for_export(params: dict, max_results: int = 500):
     """Replicate the filter logic of ``/api/athletes/search`` without paging."""
-    from sqlalchemy import and_, func, or_
     from datetime import date
+
+    from sqlalchemy import and_, func, or_
 
     query = (
         AthleteProfile.query

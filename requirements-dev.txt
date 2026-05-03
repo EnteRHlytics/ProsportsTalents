@@ -2,4 +2,6 @@ Pillow==10.2.0
 pytest==8.4.0
 # Agent5: optional HTTP-mocking dep for OAuth tests; current tests use monkeypatch
 responses>=0.25
+# Wave-3 CI: linting
+ruff>=0.6
 

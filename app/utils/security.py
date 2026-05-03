@@ -9,8 +9,8 @@ through (so it does not break local/dev work).
 It can safely be replaced with a stricter implementation later.
 """
 
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable
 
 from flask import abort, request
 

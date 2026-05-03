@@ -3,7 +3,7 @@ from datetime import date
 import pytest
 
 from app import create_app, db, jobs
-from app.models import Sport, User, AthleteProfile, AthleteStat, NBATeam, SyncLog
+from app.models import AthleteProfile, AthleteStat, NBATeam, Sport, SyncLog, User
 
 
 @pytest.fixture

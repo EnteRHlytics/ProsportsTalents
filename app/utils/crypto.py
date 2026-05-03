@@ -50,14 +50,11 @@ when SECRET_KEY is rotated. This module does NOT implement multi-key Fernet
 from __future__ import annotations
 
 import base64
-import hashlib
-from typing import Optional
 
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from sqlalchemy.types import String, TypeDecorator
-
 
 # Static salt: deliberately fixed so the same SECRET_KEY always produces the
 # same Fernet key. Encryption strength comes from SECRET_KEY entropy, not the
@@ -110,13 +107,13 @@ def _get_secret_key() -> str:
     raise RuntimeError('SECRET_KEY not configured')
 
 
-def _fernet(secret: Optional[str] = None) -> Fernet:
+def _fernet(secret: str | None = None) -> Fernet:
     secret_value = secret if secret is not None else _get_secret_key()
     key = _derive_key(secret_value)
     return Fernet(key)
 
 
-def encrypt_field(plaintext: Optional[str], secret: Optional[str] = None) -> Optional[str]:
+def encrypt_field(plaintext: str | None, secret: str | None = None) -> str | None:
     """Encrypt ``plaintext`` (str) and return a urlsafe base64 token.
 
     Returns ``None`` when input is ``None`` so callers don't need to special-case it.
@@ -129,7 +126,7 @@ def encrypt_field(plaintext: Optional[str], secret: Optional[str] = None) -> Opt
     return token.decode('utf-8')
 
 
-def decrypt_field(ciphertext: Optional[str], secret: Optional[str] = None) -> Optional[str]:
+def decrypt_field(ciphertext: str | None, secret: str | None = None) -> str | None:
     """Decrypt a token produced by :func:`encrypt_field`.
 
     Returns ``None`` when input is ``None``. Raises ``InvalidToken`` if the
@@ -192,8 +189,8 @@ class EncryptedString(TypeDecorator):
 
 
 __all__ = [
-    'encrypt_field',
-    'decrypt_field',
-    'rotate_key',
     'EncryptedString',
+    'decrypt_field',
+    'encrypt_field',
+    'rotate_key',
 ]

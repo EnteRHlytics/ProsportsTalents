@@ -7,8 +7,8 @@ the application can boot and unrelated tests can run, and so
 It should be overwritten by the owning agent's real implementation.
 """
 
-from datetime import datetime
 import uuid
+from datetime import datetime
 
 from app import db
 

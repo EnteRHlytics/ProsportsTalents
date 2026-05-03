@@ -15,14 +15,11 @@ Returns 401 if unauthenticated, 403 if not admin, 400 on bad params.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
-from flask import Blueprint, jsonify, request, abort
+from flask import Blueprint, abort, jsonify, request
 from flask_login import current_user
 
-from app import db
 from app.models.activity_log import ActivityLog
-
 
 # Standalone blueprint - registered separately under /api/activity so it
 # does not collide with the Flask-RESTX api blueprint (which already owns
@@ -46,7 +43,7 @@ def _is_admin(user) -> bool:
     return any(getattr(r, 'name', None) == 'admin' for r in roles)
 
 
-def _parse_since(raw: Optional[str]) -> Optional[datetime]:
+def _parse_since(raw: str | None) -> datetime | None:
     if not raw:
         return None
     candidate = raw.replace('Z', '+00:00')

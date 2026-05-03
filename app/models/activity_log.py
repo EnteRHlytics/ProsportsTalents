@@ -16,8 +16,8 @@ Fields
 - ``created_at``     UTC timestamp, indexed for time-range queries
 """
 
-from datetime import datetime
 import uuid
+from datetime import datetime
 
 from app import db
 

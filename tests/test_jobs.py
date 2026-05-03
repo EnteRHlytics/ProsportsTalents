@@ -1,10 +1,11 @@
 import os
-import pytest
 from unittest.mock import patch
 
-from app import create_app, db
+import pytest
+
+from app import create_app, db, jobs
 from app.models import SyncLog
-from app import jobs
+
 
 @pytest.fixture
 def app_instance(tmp_path, monkeypatch):

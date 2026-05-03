@@ -2,8 +2,8 @@ import threading
 import time
 
 import pytest
-from werkzeug.serving import make_server
 from playwright.sync_api import sync_playwright
+from werkzeug.serving import make_server
 
 from app import create_app, db
 from app.models import AthleteProfile

@@ -1,9 +1,10 @@
-from flask import request, jsonify
-from flask_restx import Resource
 import logging
 
-from app.api import api
+from flask import jsonify, request
+from flask_restx import Resource
+
 from app import db
+from app.api import api
 from app.models import AthleteProfile, AthleteSkill
 from app.utils.validators import validate_json
 

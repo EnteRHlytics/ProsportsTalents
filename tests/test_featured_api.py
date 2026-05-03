@@ -4,7 +4,7 @@ from datetime import date
 import pytest
 
 from app import create_app, db
-from app.models import User, AthleteProfile, Sport, Position, AthleteStat
+from app.models import AthleteProfile, AthleteStat, Position, Sport, User
 
 
 @pytest.fixture

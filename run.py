@@ -1,19 +1,21 @@
 import os
+from datetime import date
+
+import click
+from flask.cli import with_appcontext
+
 from app import create_app, db
 from app.models import (
-    User,
-    Role,
-    UserRole,
-    UserOAuthAccount,
-    Sport,
-    Position,
     AthleteProfile,
     AthleteSkill,
     AthleteStat,
+    Position,
+    Role,
+    Sport,
+    User,
+    UserOAuthAccount,
+    UserRole,
 )
-from flask.cli import with_appcontext
-import click
-from datetime import date
 
 app = create_app(os.getenv('FLASK_ENV') or 'development')
 
@@ -37,7 +39,7 @@ def make_shell_context():
 def init_db():
     """Initialize database with default data"""
     db.create_all()
-    
+
     # Create default roles
     roles_data = [
         {'name': 'admin', 'description': 'System Administrator'},
@@ -47,7 +49,7 @@ def init_db():
         {'name': 'athlete', 'description': 'Professional Athlete'},
         {'name': 'viewer', 'description': 'Read-only Viewer'}
     ]
-    
+
     for role_data in roles_data:
         if not Role.query.filter_by(name=role_data['name']).first():
             role = Role(
@@ -56,7 +58,7 @@ def init_db():
                 is_system_role=True
             )
             db.session.add(role)
-    
+
     # Create sports and positions
     sports_data = [
         {
@@ -119,7 +121,7 @@ def init_db():
             ]
         }
     ]
-    
+
     for sport_data in sports_data:
         sport = Sport.query.filter_by(code=sport_data['code']).first()
         if not sport:
@@ -131,7 +133,7 @@ def init_db():
             )
             db.session.add(sport)
             db.session.flush()  # Get the sport ID
-            
+
             # Add positions
             for pos_data in sport_data['positions']:
                 position = Position(

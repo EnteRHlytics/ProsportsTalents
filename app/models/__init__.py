@@ -1,32 +1,39 @@
-from .user import User
-from .role import Role, UserRole
-from .oauth import UserOAuthAccount
-from .sport import Sport, Position
 from .athlete import AthleteProfile
 from .media import AthleteMedia
-from .stats import AthleteStat, SeasonStat, GameStat
+from .oauth import UserOAuthAccount
+from .role import Role, UserRole
 from .skill import AthleteSkill
+from .sport import Position, Sport
+from .stats import AthleteStat, GameStat, SeasonStat
+from .user import User
 
 __all__ = [
-    'User', 'Role', 'UserRole',
-    'UserOAuthAccount', 'Sport', 'Position',
-    'AthleteProfile', 'AthleteMedia', 'AthleteStat',
-    'SeasonStat', 'GameStat',
+    'AthleteMedia',
+    'AthleteProfile',
     'AthleteSkill',
+    'AthleteStat',
+    'GameStat',
+    'Position',
+    'Role',
+    'SeasonStat',
+    'Sport',
+    'User',
+    'UserOAuthAccount',
+    'UserRole',
 ]
 
-from .team import Team, NBATeam, MLBTeam, NFLTeam, NHLTeam
 from .game import Game, NBAGame, NHLGame
+from .team import MLBTeam, NBATeam, NFLTeam, NHLTeam, Team
 
-__all__.extend(['Team', 'Game', 'NBATeam', 'NBAGame', 'MLBTeam', 'NFLTeam', 'NHLTeam', 'NHLGame'])
+__all__.extend(['Game', 'MLBTeam', 'NBAGame', 'NBATeam', 'NFLTeam', 'NHLGame', 'NHLTeam', 'Team'])
 
 from .sync_log import SyncLog
 
 __all__.append('SyncLog')
 
-from .prospect import ProspectLeague, MinorLeagueTeam, Prospect, ProspectStat
+from .prospect import MinorLeagueTeam, Prospect, ProspectLeague, ProspectStat
 
-__all__.extend(['ProspectLeague', 'MinorLeagueTeam', 'Prospect', 'ProspectStat'])
+__all__.extend(['MinorLeagueTeam', 'Prospect', 'ProspectLeague', 'ProspectStat'])
 
 from .api_key import ApiKey
 

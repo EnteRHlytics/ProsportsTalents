@@ -1,5 +1,7 @@
 import requests
+
 from app.services import http_utils
+
 
 class DummyResponse:
     def __init__(self):

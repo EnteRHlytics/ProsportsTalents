@@ -6,11 +6,12 @@ up the Flask app, so failures elsewhere do not mask the behaviour
 under test here.
 """
 
+import json
 import os
 import sys
-import json
 import types
 import uuid
+
 import pytest
 
 # Ensure project root is importable
@@ -64,13 +65,14 @@ _ensure_stub('app.utils.security', {'require_api_key': _noop_decorator})
 # App / DB setup
 # ---------------------------------------------------------------------------
 from app import create_app, db  # noqa: E402
-from app.models import User  # noqa: E402
-from app.models.oauth import UserOAuthAccount  # noqa: E402
-from app.models.saved_search import SavedSearch  # noqa: E402
+
 # Import saved_searches API module so its routes are registered with the
 # Flask-RESTX namespace before the app boots (the project's main
 # ``app/api/__init__.py`` does not yet import it — see MERGE_NOTES.md).
-from app.api import saved_searches as _saved_searches_api  # noqa: F401, E402
+from app.api import saved_searches as _saved_searches_api  # noqa: E402
+from app.models import User  # noqa: E402
+from app.models.oauth import UserOAuthAccount  # noqa: E402
+from app.models.saved_search import SavedSearch  # noqa: E402
 
 
 @pytest.fixture
@@ -153,7 +155,7 @@ def test_create_and_list_saved_search(client, app_instance):
     created = json.loads(resp.data)
     assert created['name'] == 'NBA point guards'
     assert created['params'] == payload['params']
-    assert 'id' in created and created['id']
+    assert created.get('id')
 
     resp = client.get('/api/saved-searches', headers=headers)
     assert resp.status_code == 200

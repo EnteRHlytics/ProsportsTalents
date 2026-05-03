@@ -1,8 +1,10 @@
+import logging
 import os
 import uuid
-import logging
-from werkzeug.utils import secure_filename
+
 from PIL import Image
+from werkzeug.utils import secure_filename
+
 
 class MediaService:
     BASE_DIR = 'storage'

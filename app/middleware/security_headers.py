@@ -19,7 +19,6 @@ from __future__ import annotations
 
 from flask import Flask, Response
 
-
 DEFAULT_CSP = (
     "default-src 'self'; "
     "img-src 'self' data: https:; "

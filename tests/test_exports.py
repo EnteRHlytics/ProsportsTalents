@@ -90,16 +90,23 @@ from flask_login import LoginManager  # noqa: E402
 
 from app import db  # noqa: E402
 from app.models import (  # noqa: E402
-    AthleteProfile, AthleteSkill, AthleteStat,
-    Position, Sport, User,
-)
-from app.services.pdf_export import (  # noqa: E402
-    athlete_profile_pdf, rankings_pdf, search_results_pdf,
+    AthleteProfile,
+    AthleteSkill,
+    AthleteStat,
+    Position,
+    Sport,
+    User,
 )
 from app.services.excel_export import (  # noqa: E402
-    athlete_profile_xlsx, rankings_xlsx, search_results_xlsx,
+    athlete_profile_xlsx,
+    rankings_xlsx,
+    search_results_xlsx,
 )
-
+from app.services.pdf_export import (  # noqa: E402
+    athlete_profile_pdf,
+    rankings_pdf,
+    search_results_pdf,
+)
 
 PDF_MAGIC = b"%PDF"
 XLSX_MAGIC = b"PK\x03\x04"  # zip-based xlsx
@@ -131,6 +138,7 @@ def app():
     # endpoints can be exercised without importing the project's broken
     # api/__init__.py.
     from flask_restx import Api
+
     from app.api import exports as exports_module
 
     blueprint = flask_app.blueprints  # avoid duplicate registration on reuse
@@ -304,9 +312,8 @@ def test_rankings_xlsx_renders():
 
 
 def test_athlete_profile_pdf_missing_id(app):
-    with app.app_context():
-        with pytest.raises(ValueError):
-            athlete_profile_pdf("does-not-exist")
+    with app.app_context(), pytest.raises(ValueError):
+        athlete_profile_pdf("does-not-exist")
 
 
 # ---------------------------------------------------------------------------

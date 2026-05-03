@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, DateField, SelectField, SubmitField
+from wtforms import DateField, StringField, SubmitField
 from wtforms.validators import DataRequired
+
 
 class AthleteForm(FlaskForm):
     first_name = StringField('First Name', validators=[DataRequired()])

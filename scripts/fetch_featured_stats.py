@@ -1,13 +1,12 @@
 import os
 from datetime import date
-from typing import Dict
 
 from app import create_app, db
 from app.models import AthleteProfile, AthleteStat
-from app.services import nba_service, nfl_service, mlb_service, nhl_service
+from app.services import mlb_service, nba_service, nfl_service, nhl_service
 
 
-def _collect_stats(athlete: AthleteProfile, year: int) -> Dict[str, str]:
+def _collect_stats(athlete: AthleteProfile, year: int) -> dict[str, str]:
     """Return relevant stats for the given athlete."""
     sport = athlete.primary_sport.code if athlete.primary_sport else None
     mapping = {}
@@ -67,7 +66,7 @@ def main() -> None:
                     mlb_service.sync_player_stats(mlb_client, ath, season=year)
                 elif sport == "NHL":
                     nhl_service.sync_player_stats(nhl_client, ath, season=str(year))
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 app.logger.error("Stat sync failed for %s: %s", ath.athlete_id, exc)
                 db.session.rollback()
 

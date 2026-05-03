@@ -8,9 +8,9 @@ that the API layer can stream as an attachment.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from datetime import datetime
 from io import BytesIO
-from datetime import datetime, date
-from typing import Iterable, List, Optional
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import LETTER
@@ -25,7 +25,6 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
-
 
 # ---------------------------------------------------------------------------
 # Branding / shared style helpers
@@ -143,7 +142,7 @@ def _new_doc(buf: BytesIO, title: str) -> SimpleDocTemplate:
     )
 
 
-def _photo_flowable(url: Optional[str], initials: str, width=1.1 * inch, height=1.4 * inch):
+def _photo_flowable(url: str | None, initials: str, width=1.1 * inch, height=1.4 * inch):
     """Return an Image if URL is local + readable, else a placeholder Table."""
     if url:
         try:
@@ -246,7 +245,7 @@ def athlete_profile_pdf(athlete_id: str) -> BytesIO:
     (header, bio, season stats, recent games, skills, contact). Raises
     ``ValueError`` if the athlete cannot be found.
     """
-    from app.models import AthleteProfile, AthleteStat, AthleteSkill
+    from app.models import AthleteProfile, AthleteSkill, AthleteStat
 
     athlete = (
         AthleteProfile.query
@@ -282,7 +281,7 @@ def _recent_games_for(athlete, limit: int = 5):
     so that missing teams or sport mappings simply return an empty list.
     """
     try:
-        from app.models import NBATeam, NBAGame, NHLTeam, NHLGame
+        from app.models import NBAGame, NBATeam, NHLGame, NHLTeam
     except Exception:
         return []
 
@@ -595,8 +594,8 @@ def search_results_pdf(athletes_list: Iterable, filters_summary: dict) -> BytesI
 # Rankings PDF
 # ---------------------------------------------------------------------------
 
-def rankings_pdf(rankings: Iterable, sport: Optional[str] = None,
-                 weights: Optional[dict] = None) -> BytesIO:
+def rankings_pdf(rankings: Iterable, sport: str | None = None,
+                 weights: dict | None = None) -> BytesIO:
     """Render rankings to PDF.
 
     ``rankings`` is an iterable of dict-like rows with at least ``name`` and

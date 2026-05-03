@@ -1,21 +1,22 @@
+import json
 import os
 import sys
 import uuid
-import json
 from datetime import date
+
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
 from app.models import (
-    User,
     AthleteProfile,
     AthleteStat,
-    NBATeam,
     NBAGame,
-    Sport,
+    NBATeam,
     Position,
+    Sport,
+    User,
 )
 
 

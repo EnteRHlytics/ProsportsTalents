@@ -1,15 +1,15 @@
 import logging
-from typing import Optional
 
 import requests
-from flask import current_app
 from cachelib import SimpleCache
-from .http_utils import request_with_retry
-from .rate_limit import RateLimiter
+from flask import current_app
 
 from app import db
-from app.models import NBATeam, NBAGame, AthleteProfile, AthleteStat
-from .data_mapping import map_nba_team, map_nba_game
+from app.models import AthleteProfile, AthleteStat, NBAGame, NBATeam
+
+from .data_mapping import map_nba_game, map_nba_team
+from .http_utils import request_with_retry
+from .rate_limit import RateLimiter
 
 
 class NBAAPIClient:
@@ -17,8 +17,8 @@ class NBAAPIClient:
 
     def __init__(
         self,
-        base_url: Optional[str] = None,
-        token: Optional[str] = None,
+        base_url: str | None = None,
+        token: str | None = None,
         rate_limit_interval: float = 1.0,
         cache_timeout: int = 3600,
     ):
@@ -42,7 +42,7 @@ class NBAAPIClient:
         self.rate_limiter = RateLimiter(rate_limit_interval)
         self.cache = SimpleCache(default_timeout=cache_timeout)
 
-    def _get(self, endpoint: str, params: Optional[dict] = None):
+    def _get(self, endpoint: str, params: dict | None = None):
         """Perform GET with retry and handle errors gracefully."""
         url = f"{self.base_url}{endpoint}"
         try:
@@ -76,7 +76,7 @@ class NBAAPIClient:
         self.cache.set('teams', teams)
         return teams
 
-    def get_games(self, team_id: int, season: Optional[int] = None):
+    def get_games(self, team_id: int, season: int | None = None):
         params = {'team_ids[]': team_id}
         if season:
             params['seasons[]'] = season
@@ -88,7 +88,7 @@ class NBAAPIClient:
         self.cache.set(key, games)
         return games
 
-    def get_player_season_avg(self, player_id: int, season: Optional[int] = None):
+    def get_player_season_avg(self, player_id: int, season: int | None = None):
         params = {'player_ids[]': player_id}
         if season:
             params['season'] = season
@@ -118,7 +118,7 @@ def sync_teams(client: NBAAPIClient):
     return teams
 
 
-def sync_games(client: NBAAPIClient, team_id: int, season: Optional[int] = None):
+def sync_games(client: NBAAPIClient, team_id: int, season: int | None = None):
     """Fetch game logs for a team and store them."""
     games = client.get_games(team_id=team_id, season=season)
     for g in games:
@@ -138,7 +138,7 @@ def sync_games(client: NBAAPIClient, team_id: int, season: Optional[int] = None)
     return games
 
 
-def sync_player_stats(client: NBAAPIClient, athlete: AthleteProfile, season: Optional[int] = None):
+def sync_player_stats(client: NBAAPIClient, athlete: AthleteProfile, season: int | None = None):
     """Fetch season averages for an athlete and store as stats."""
     player_id = getattr(athlete, 'nba_player_id', None)
     if not player_id:

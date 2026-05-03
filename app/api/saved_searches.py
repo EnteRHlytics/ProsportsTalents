@@ -7,14 +7,14 @@ common query (e.g. "available NBA point guards under 25").
 
 from functools import wraps
 
-from flask import request, abort, current_app
+from flask import abort, current_app, request
 from flask_login import current_user
 from flask_restx import Resource
 
-from app.api import api
 from app import db
-from app.models.saved_search import SavedSearch
+from app.api import api
 from app.models.oauth import UserOAuthAccount
+from app.models.saved_search import SavedSearch
 
 
 def _resolve_current_user():
