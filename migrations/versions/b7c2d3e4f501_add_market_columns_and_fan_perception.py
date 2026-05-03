@@ -1,7 +1,7 @@
 """add salary/endorsement columns to athletes and fan_perception_scores table
 
 Revision ID: b7c2d3e4f501
-Revises: a5b1c0d2e3f4
+Revises: b6c2f4d7e1a8
 Create Date: 2026-05-02 00:30:00.000000
 """
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'b7c2d3e4f501'
-down_revision = 'a5b1c0d2e3f4'
+down_revision = 'b6c2f4d7e1a8'
 branch_labels = None
 depends_on = None
 
