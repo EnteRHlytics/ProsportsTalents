@@ -11,6 +11,7 @@ import SkillRadar from '../components/charts/SkillRadar';
 import PageWrapper from '../components/layout/PageWrapper';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import ErrorMessage from '../components/ui/ErrorMessage';
+import ExportButtons from '../components/common/ExportButtons';
 import { getSportConfig } from '../utils/sportConfig';
 
 export default function AthleteProfile() {
@@ -67,6 +68,9 @@ export default function AthleteProfile() {
 
   return (
     <PageWrapper>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+        <ExportButtons type="athlete" id={id} label="Export" />
+      </div>
       <ProfileHero athlete={athlete} onDelete={handleDelete} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,2fr)', gap: 20 }}>
