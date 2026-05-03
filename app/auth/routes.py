@@ -1,7 +1,7 @@
 from flask import render_template, redirect, url_for, flash, session, current_app, request
 from flask_login import login_user, logout_user, current_user
 from app.auth import bp
-from app import db, oauth
+from app import db, oauth, limiter  # Agent5: import shared limiter
 from app.models.user import User
 from app.models.role import Role
 from sqlalchemy import or_
@@ -10,7 +10,12 @@ from app.auth.forms import LoginForm, RegistrationForm
 from datetime import datetime
 import requests
 
+# Agent5: stricter rate limit on auth endpoints (sec 5.1 Rate Limiting).
+# Login/register: 10 per minute per IP/api-key, in addition to global default.
+_AUTH_RATE_LIMIT = '10 per minute'
+
 @bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit(_AUTH_RATE_LIMIT)  # Agent5: stricter limit
 def login():
     """Display login page and handle form login"""
     if current_user.is_authenticated:
@@ -33,6 +38,7 @@ def login():
 
 
 @bp.route('/register', methods=['GET', 'POST'])
+@limiter.limit(_AUTH_RATE_LIMIT)  # Agent5: stricter limit
 def register():
     """Register a new user"""
     if current_user.is_authenticated:

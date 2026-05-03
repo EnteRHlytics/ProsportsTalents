@@ -73,7 +73,22 @@ def create_app(config_name='development'):
     
     # Register blueprints
     register_blueprints(app)
-    
+
+    # Agent5: register hardening middleware (security headers + audit logging).
+    # Order matters: security headers should run on every response (registered
+    # first so it sets headers even when audit short-circuits); audit hook
+    # records mutating requests after the response is built.
+    from app.middleware import register_security_headers, register_audit_middleware
+    register_security_headers(app)
+    register_audit_middleware(app)
+
+    # Agent5: register activity log read endpoint (admin-only, /api/activity)
+    try:
+        from app.api.activity import bp as _activity_bp
+        app.register_blueprint(_activity_bp)
+    except Exception as _e:  # pragma: no cover
+        app.logger.error(f"Failed to register activity blueprint: {_e}")
+
     # Initialize scheduler if enabled
     if app.config.get('ENABLE_SCHEDULER'):
         from app.scheduler import init_scheduler
