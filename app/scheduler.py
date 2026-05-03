@@ -25,6 +25,12 @@ def init_scheduler(app: Flask) -> BackgroundScheduler:
         _job(jobs.sync_all_prospects),
         CronTrigger(day_of_week="sun", hour=4),
     )
+    # Wave-3: refresh cached Wikipedia/Reddit fan-perception scores nightly
+    # at 04:00.  Runs every day (not just Sunday) so dashboards stay fresh.
+    scheduler.add_job(
+        _job(jobs.nightly_refresh_fan_perception),
+        CronTrigger(hour=4),
+    )
 
     scheduler.start()
     return scheduler

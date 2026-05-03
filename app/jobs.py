@@ -119,6 +119,56 @@ def sync_all_prospects():
         _log_sync('sync_all_prospects', False, str(exc))
 
 
+def nightly_refresh_fan_perception():
+    """Refresh cached fan-perception scores for every athlete.
+
+    Iterates ``AthleteProfile`` rows and calls
+    :func:`app.services.fan_perception_service.compute_fan_perception_score`
+    with ``use_cache=False`` so each athlete gets a fresh upstream fetch.
+    Per-athlete failures are swallowed; one bad row must not abort the
+    whole job.
+    """
+    try:
+        from app.services.fan_perception_service import (
+            compute_fan_perception_score,
+        )
+
+        refreshed = 0
+        skipped = 0
+        for athlete in AthleteProfile.query.all():
+            try:
+                result = compute_fan_perception_score(
+                    athlete, use_cache=False, persist=True
+                )
+                if result is None:
+                    skipped += 1
+                else:
+                    refreshed += 1
+            except Exception as exc:  # pragma: no cover - defensive
+                logger.warning(
+                    "Fan-perception refresh failed for %s: %s",
+                    getattr(athlete, "athlete_id", "?"), exc,
+                )
+                skipped += 1
+
+        logger.info(
+            "Nightly fan-perception refresh complete (refreshed=%d skipped=%d)",
+            refreshed, skipped,
+        )
+        _log_sync(
+            "nightly_refresh_fan_perception",
+            True,
+            f"refreshed={refreshed} skipped={skipped}",
+        )
+    except Exception as exc:
+        logger.exception("Nightly fan-perception refresh failed: %s", exc)
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        _log_sync("nightly_refresh_fan_perception", False, str(exc))
+
+
 def historical_backfill_stats(seasons=None, num_seasons: int = 3):
     """Backfill historical stats for tracked athletes and teams."""
     if seasons is None:

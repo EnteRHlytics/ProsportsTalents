@@ -43,3 +43,7 @@ __all__.append('RankingPreset')
 from .activity_log import ActivityLog
 
 __all__.append('ActivityLog')
+
+from .fan_perception_score import FanPerceptionScore
+
+__all__.append('FanPerceptionScore')

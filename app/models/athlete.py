@@ -46,7 +46,12 @@ class AthleteProfile(BaseModel):
     # Search and ranking
     search_vector = db.Column(db.Text)  # For full-text search
     overall_rating = db.Column(db.Numeric(4, 2))  # 0.00 to 99.99
-    
+
+    # Market value (agency-input fields - see market_value_service)
+    salary_usd = db.Column(db.Numeric(12, 2))
+    endorsements_usd = db.Column(db.Numeric(12, 2))
+    contract_end_date = db.Column(db.Date)
+
     # Relationships
     user = db.relationship('User', back_populates='athlete_profile')
     primary_sport = db.relationship('Sport', back_populates='athletes')
