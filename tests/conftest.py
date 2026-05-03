@@ -47,9 +47,9 @@ TestingConfig.SQLALCHEMY_SESSION_OPTIONS = {"expire_on_commit": False}
 # pre-import, the stubs poison subsequent app instances and the routes
 # under ``/api/keys`` and ``/api/prospects`` go missing.
 try:  # pragma: no cover - import-time only
-    import app.models.prospect  # noqa: F401
-    import app.models.api_key  # noqa: F401
-    import app.api.keys  # noqa: F401
-    import app.api.prospects  # noqa: F401
+    import app.api.keys
+    import app.api.prospects
+    import app.models.api_key
+    import app.models.prospect
 except Exception:
     pass

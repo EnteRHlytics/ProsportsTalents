@@ -9,9 +9,9 @@ DB), the helper falls back to allowing the request so unrelated work is
 not blocked.
 """
 
+from collections.abc import Callable
 from datetime import datetime
 from functools import wraps
-from typing import Callable
 
 from flask import abort, request
 

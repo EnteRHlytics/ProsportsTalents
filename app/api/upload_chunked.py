@@ -9,27 +9,26 @@ reassembled into a single file, validated, and moved into the existing
 media storage location.
 """
 
+import logging
 import os
 import shutil
 import tempfile
-import logging
 import uuid
 
-from flask import request, jsonify, abort, current_app
+from flask import abort, current_app, jsonify, request
 from flask_restx import Resource
-from werkzeug.utils import secure_filename
 from werkzeug.datastructures import FileStorage
+from werkzeug.utils import secure_filename
 
 from app import db
 from app.api import api
-from app.models import AthleteProfile, AthleteMedia
+from app.models import AthleteMedia, AthleteProfile
 from app.services.media_service import (
     MediaService,
     classify_extension,
     max_size_for_category,
 )
 from app.utils.auth import login_or_token_required
-
 
 logger = logging.getLogger(__name__)
 

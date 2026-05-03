@@ -10,11 +10,11 @@ The raw secret is only returned at creation time; the database stores
 only the sha256 hash plus the first-12-character display prefix.
 """
 
+import logging
 from datetime import datetime
 from functools import wraps
-import logging
 
-from flask import abort, current_app, request
+from flask import abort, request
 from flask_login import current_user
 from flask_restx import Resource
 
@@ -22,7 +22,6 @@ from app import db
 from app.api import api
 from app.models import ApiKey
 from app.models.oauth import UserOAuthAccount
-
 
 logger = logging.getLogger(__name__)
 

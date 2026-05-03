@@ -49,10 +49,9 @@ import json
 import logging
 import math
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any
 
 import requests
-
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +101,7 @@ _REDDIT_SEARCH = "https://www.reddit.com/search.json"
 class WikipediaPageviewsClient:
     """Thin wrapper around the Wikipedia per-article pageviews API."""
 
-    def __init__(self, session: Optional[requests.Session] = None,
+    def __init__(self, session: requests.Session | None = None,
                  timeout: float = 10.0):
         self._session = session or requests.Session()
         self._timeout = timeout
@@ -112,7 +111,7 @@ class WikipediaPageviewsClient:
         # Wikipedia URLs use underscores instead of spaces.
         return title.strip().replace(" ", "_")
 
-    def get_views(self, article_title: str, days: int = 30) -> Optional[int]:
+    def get_views(self, article_title: str, days: int = 30) -> int | None:
         """Return total daily pageviews for ``article_title`` over ``days``.
 
         Returns ``None`` if the upstream call fails or the article does
@@ -163,12 +162,12 @@ class WikipediaPageviewsClient:
 class RedditMentionsClient:
     """Read-only Reddit search using the public ``search.json`` endpoint."""
 
-    def __init__(self, session: Optional[requests.Session] = None,
+    def __init__(self, session: requests.Session | None = None,
                  timeout: float = 10.0):
         self._session = session or requests.Session()
         self._timeout = timeout
 
-    def get_mention_count(self, query: str, period: str = "month") -> Optional[int]:
+    def get_mention_count(self, query: str, period: str = "month") -> int | None:
         """Return the number of Reddit posts matching ``query`` in ``period``.
 
         ``period`` is one of ``hour|day|week|month|year|all``.  Returns
@@ -211,14 +210,14 @@ class RedditMentionsClient:
 # ---------------------------------------------------------------------------
 
 
-def _wiki_subscore(views: Optional[int]) -> Optional[float]:
+def _wiki_subscore(views: int | None) -> float | None:
     """Log-scale Wikipedia views into a 0-100 sub-score."""
     if views is None or views < 0:
         return None
     return _clamp(math.log10(1 + views) / _WIKI_LOG_REFERENCE * 100.0)
 
 
-def _reddit_subscore(mentions: Optional[int]) -> Optional[float]:
+def _reddit_subscore(mentions: int | None) -> float | None:
     """Log-scale Reddit mentions into a 0-100 sub-score."""
     if mentions is None or mentions < 0:
         return None
@@ -234,8 +233,8 @@ def _clamp(value: float, lo: float = 0.0, hi: float = 100.0) -> float:
 
 
 def combine_subscores(
-    wiki: Optional[float], reddit: Optional[float]
-) -> Optional[float]:
+    wiki: float | None, reddit: float | None
+) -> float | None:
     """Combine the two sub-scores into a 0-100 composite.
 
     * Both ``None`` -> ``None`` (let the caller fall back).
@@ -263,16 +262,16 @@ def combine_subscores(
 class FanPerceptionResult:
     """Lightweight return container - independent of the ORM."""
 
-    __slots__ = ("score", "breakdown", "computed_at")
+    __slots__ = ("breakdown", "computed_at", "score")
 
-    def __init__(self, score: float, breakdown: Dict[str, Any],
+    def __init__(self, score: float, breakdown: dict[str, Any],
                  computed_at: datetime):
         self.score = score
         self.breakdown = breakdown
         self.computed_at = computed_at
 
 
-def _athlete_query_name(athlete: Any) -> Optional[str]:
+def _athlete_query_name(athlete: Any) -> str | None:
     """Best-effort extraction of a search string from an athlete object."""
     user = getattr(athlete, "user", None)
     if user is not None:
@@ -286,7 +285,7 @@ def _athlete_query_name(athlete: Any) -> Optional[str]:
     return getattr(athlete, "name", None)
 
 
-def _is_fresh(row, now: Optional[datetime] = None) -> bool:
+def _is_fresh(row, now: datetime | None = None) -> bool:
     if row is None or row.computed_at is None:
         return False
     now = now or datetime.utcnow()
@@ -303,7 +302,7 @@ def _load_cached(athlete_id: str):
         return None
 
 
-def _save_cached(athlete_id: str, score: float, breakdown: Dict[str, Any],
+def _save_cached(athlete_id: str, score: float, breakdown: dict[str, Any],
                  computed_at: datetime) -> None:
     """Insert or update the cached row for ``athlete_id``.  Never raises."""
     try:
@@ -342,11 +341,11 @@ def _save_cached(athlete_id: str, score: float, breakdown: Dict[str, Any],
 def compute_fan_perception_score(
     athlete: Any,
     *,
-    wiki_client: Optional[WikipediaPageviewsClient] = None,
-    reddit_client: Optional[RedditMentionsClient] = None,
+    wiki_client: WikipediaPageviewsClient | None = None,
+    reddit_client: RedditMentionsClient | None = None,
     use_cache: bool = True,
     persist: bool = True,
-) -> Optional[float]:
+) -> float | None:
     """Return a 0-100 fan-perception score for ``athlete``.
 
     Parameters
@@ -425,9 +424,9 @@ def compute_fan_perception_score(
 
 __all__ = [
     "CACHE_TTL",
-    "WikipediaPageviewsClient",
-    "RedditMentionsClient",
     "FanPerceptionResult",
+    "RedditMentionsClient",
+    "WikipediaPageviewsClient",
     "combine_subscores",
     "compute_fan_perception_score",
 ]

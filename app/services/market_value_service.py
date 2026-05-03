@@ -61,8 +61,7 @@ from __future__ import annotations
 import logging
 import math
 from datetime import date
-from typing import Any, Dict, Optional
-
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +71,7 @@ logger = logging.getLogger(__name__)
 # salary caps / top-of-market AAVs - public knowledge, not sourced from a
 # scraping target.
 # ---------------------------------------------------------------------------
-SPORT_COMPENSATION_REFERENCE: Dict[str, float] = {
+SPORT_COMPENSATION_REFERENCE: dict[str, float] = {
     "NBA": 140_000_000.0,
     "NFL": 255_000_000.0,
     "NHL": 88_000_000.0,
@@ -95,7 +94,7 @@ _CONTRACT_REFERENCE_YEARS = 5.0
 # ---------------------------------------------------------------------------
 
 
-def _to_float(value: Any) -> Optional[float]:
+def _to_float(value: Any) -> float | None:
     if value is None:
         return None
     try:
@@ -112,8 +111,8 @@ def _clamp(value: float, lo: float = 0.0, hi: float = 100.0) -> float:
     return value
 
 
-def _years_remaining(contract_end: Optional[date],
-                     today: Optional[date] = None) -> Optional[float]:
+def _years_remaining(contract_end: date | None,
+                     today: date | None = None) -> float | None:
     if contract_end is None:
         return None
     today = today or date.today()
@@ -129,10 +128,10 @@ def _years_remaining(contract_end: Optional[date],
 
 
 def compensation_subscore(
-    salary_usd: Optional[float],
-    endorsements_usd: Optional[float],
-    sport_code: Optional[str],
-) -> Optional[float]:
+    salary_usd: float | None,
+    endorsements_usd: float | None,
+    sport_code: str | None,
+) -> float | None:
     """Return a 0-100 sub-score from total compensation.
 
     Returns ``None`` when both inputs are missing.
@@ -153,7 +152,7 @@ def compensation_subscore(
     )
 
 
-def contract_subscore(years_remaining: Optional[float]) -> float:
+def contract_subscore(years_remaining: float | None) -> float:
     """Return a 0-100 sub-score from years remaining on contract.
 
     Missing data -> a neutral 50.0 baseline (we do not penalise athletes
@@ -164,7 +163,7 @@ def contract_subscore(years_remaining: Optional[float]) -> float:
     return _clamp(years_remaining / _CONTRACT_REFERENCE_YEARS * 100.0)
 
 
-def experience_subscore(years_professional: Optional[float]) -> float:
+def experience_subscore(years_professional: float | None) -> float:
     """Inverted-V experience curve peaking at year 8.
 
     * years 0 / 16+ -> 40.0
@@ -187,8 +186,8 @@ def experience_subscore(years_professional: Optional[float]) -> float:
 def compute_market_value_score(
     athlete: Any,
     *,
-    today: Optional[date] = None,
-) -> Optional[float]:
+    today: date | None = None,
+) -> float | None:
     """Compute the 0-100 market-value score for ``athlete``.
 
     Returns ``None`` when neither salary nor endorsements are available
@@ -226,8 +225,8 @@ def compute_market_value_score(
 
 
 def market_value_breakdown(
-    athlete: Any, *, today: Optional[date] = None
-) -> Dict[str, Any]:
+    athlete: Any, *, today: date | None = None
+) -> dict[str, Any]:
     """Return the per-sub-score breakdown - useful for admin UIs / tests."""
     sport = None
     primary_sport = getattr(athlete, "primary_sport", None)
@@ -263,8 +262,8 @@ def market_value_breakdown(
 __all__ = [
     "SPORT_COMPENSATION_REFERENCE",
     "compensation_subscore",
+    "compute_market_value_score",
     "contract_subscore",
     "experience_subscore",
-    "compute_market_value_score",
     "market_value_breakdown",
 ]

@@ -12,10 +12,9 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
-from app.models import User, AthleteProfile, AthleteMedia
+from app.models import AthleteMedia, AthleteProfile, User
 from app.models.oauth import UserOAuthAccount
 from app.services.media_service import MediaService
-
 
 # A tiny but signature-correct PDF payload used for valid uploads.
 _PDF_BYTES = b'%PDF-1.4\n%' + (b'\xe2\xe3\xcf\xd3') + (b'\n0 obj\n<<>>\nendobj\n' * 20)

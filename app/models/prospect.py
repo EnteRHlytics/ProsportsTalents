@@ -11,8 +11,6 @@ module replaces those stubs with the real production schemas.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
-from typing import Optional
 
 from app import db
 from app.models.base import BaseModel
@@ -178,7 +176,7 @@ class Prospect(BaseModel):
         return f"{self.first_name} {self.last_name}".strip()
 
     @property
-    def age(self) -> Optional[int]:
+    def age(self) -> int | None:
         if not self.date_of_birth:
             return None
         from datetime import date

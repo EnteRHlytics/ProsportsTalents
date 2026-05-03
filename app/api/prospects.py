@@ -14,25 +14,22 @@ Endpoints (mounted under the ``api`` blueprint):
 - ``POST   /api/prospects/<id>/stats``      - upsert stat (auth required)
 """
 
-from datetime import date, datetime
 import logging
+from datetime import date, datetime
 
-from flask import abort, current_app, jsonify, request
+from flask import abort, request
 from flask_restx import Resource
 from sqlalchemy import or_
 
 from app import db
 from app.api import api
 from app.models import (
-    MinorLeagueTeam,
-    Position,
     Prospect,
     ProspectLeague,
     ProspectStat,
     Sport,
 )
 from app.utils.auth import login_or_token_required
-
 
 logger = logging.getLogger(__name__)
 

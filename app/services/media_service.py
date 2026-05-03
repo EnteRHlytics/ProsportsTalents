@@ -1,11 +1,11 @@
-import os
-import uuid
 import logging
 import mimetypes
-from werkzeug.utils import secure_filename
+import os
+import uuid
+
 from flask import abort
 from PIL import Image
-
+from werkzeug.utils import secure_filename
 
 # Per-requirements limits (Section 3.3 Content Management - File Upload)
 VIDEO_EXTENSIONS = {'.mp4', '.avi', '.mov'}

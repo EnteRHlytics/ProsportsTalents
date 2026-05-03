@@ -18,7 +18,6 @@ from types import SimpleNamespace
 import pytest
 import responses
 
-
 _SERVICE_PATH = os.path.abspath(
     os.path.join(
         os.path.dirname(__file__),

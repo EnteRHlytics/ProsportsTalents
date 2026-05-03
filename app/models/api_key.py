@@ -17,7 +17,6 @@ import hashlib
 import secrets as _secrets
 import uuid
 from datetime import datetime
-from typing import Optional, Tuple
 
 from app import db
 from app.models.base import BaseModel
@@ -62,11 +61,11 @@ class ApiKey(BaseModel):
     def generate(
         cls,
         *,
-        user_id: Optional[str],
+        user_id: str | None,
         name: str,
-        scopes: Optional[list] = None,
-        expires_at: Optional[datetime] = None,
-    ) -> Tuple['ApiKey', str]:
+        scopes: list | None = None,
+        expires_at: datetime | None = None,
+    ) -> tuple[ApiKey, str]:
         """Create (but don't persist) an ApiKey + the raw key.
 
         Returns ``(api_key, raw_key)``. Caller is responsible for adding to
@@ -85,7 +84,7 @@ class ApiKey(BaseModel):
         return record, raw
 
     @classmethod
-    def find_by_raw_key(cls, raw: str) -> Optional['ApiKey']:
+    def find_by_raw_key(cls, raw: str) -> ApiKey | None:
         """Look up an active, non-expired key by raw value."""
         if not raw:
             return None
