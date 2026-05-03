@@ -74,8 +74,8 @@ def test_athlete_errors(app_ctx):
 
 def test_media_service_file_ops(tmp_path, monkeypatch):
     monkeypatch.setattr(MediaService, 'BASE_DIR', str(tmp_path))
-    data = io.BytesIO(b'content')
-    fs = FileStorage(stream=data, filename='test.txt')
+    data = io.BytesIO(b'%PDF-1.4\n%test content\n%%EOF\n')
+    fs = FileStorage(stream=data, filename='test.pdf', content_type='application/pdf')
     path, fname = MediaService.save_file(fs, 'ath1', 'docs')
     assert os.path.exists(path)
     assert fname in path
