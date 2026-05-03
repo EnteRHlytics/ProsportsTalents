@@ -1,50 +1,50 @@
-"""Minimal cache utilities.
+"""Cache manager stub.
 
-This is a lightweight no-op stub used so the application can boot in
-environments without a Redis backend (e.g. unit tests). The full
-implementation may be provided elsewhere; if it exists, it should
-override these definitions before they are used.
+NOTE: This is a minimal stub required because ``app/utils/__init__.py``
+and ``app/__init__.py`` import ``cache_manager``/``cached`` from this module,
+but the actual cache implementation may belong to another agent.
+
+If a richer caching layer is supplied later, this stub can be replaced.
+The stub is import-safe and provides a no-op ``init_app`` plus a passthrough
+``cached`` decorator so the application boots and tests can run.
 """
 
 from functools import wraps
+from typing import Any, Callable, Optional
 
 
-class CacheManager:
-    """Very small cache manager facade.
+class _NoOpCacheManager:
+    """No-op cache manager so the application can boot without Redis."""
 
-    Provides the surface area used elsewhere in the app
-    (``init_app`` and an optional ``redis_client``) without
-    requiring an actual cache backend.
-    """
-
-    def __init__(self):
+    def __init__(self) -> None:
         self.redis_client = None
         self.app = None
 
-    def init_app(self, app):
+    def init_app(self, app) -> None:  # noqa: D401 - simple proxy
+        """Attach to the Flask app. No backend is configured."""
         self.app = app
 
-    def get(self, key):
+    # Minimal interface other call sites may rely on
+    def get(self, key: str) -> Optional[Any]:
         return None
 
-    def set(self, key, value, timeout=None):
+    def set(self, key: str, value: Any, timeout: Optional[int] = None) -> bool:
         return False
 
-    def delete(self, key):
+    def delete(self, key: str) -> bool:
+        return False
+
+    def clear(self) -> bool:
         return False
 
 
-cache_manager = CacheManager()
+cache_manager = _NoOpCacheManager()
 
 
-def cached(timeout=60, key_prefix=""):
-    """Decorator stub that simply calls the wrapped function.
+def cached(timeout: int = 300, key_prefix: str = "") -> Callable:
+    """No-op caching decorator. Calls the wrapped function every time."""
 
-    Mirrors the call signature of common Flask cache decorators so
-    existing call sites work without requiring a real cache backend.
-    """
-
-    def decorator(fn):
+    def decorator(fn: Callable) -> Callable:
         @wraps(fn)
         def wrapper(*args, **kwargs):
             return fn(*args, **kwargs)
