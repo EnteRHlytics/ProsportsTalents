@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { Menu, X, Sun, Moon, LogIn, LogOut, UserCircle, Trophy } from 'lucide-react';
+import { Menu, X, Sun, Moon, LogIn, Trophy, Activity as ActivityIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import UserMenu from './UserMenu';
+import SavedSearchesMenu from './SavedSearchesMenu';
 
 const NAV_LINKS = [
   { to: '/',          label: 'Dashboard' },
   { to: '/discover',  label: 'Athletes' },
+  { to: '/rankings',  label: 'Rankings' },
   { to: '/prospects', label: 'Prospects' },
   { to: '/compare',   label: 'Compare' },
 ];
@@ -37,7 +40,8 @@ const iconBtnStyle = {
 
 export default function Navbar({ theme = 'dark', toggleTheme = () => {} }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, login, logout } = useAuth();
+  const { user, hasRole } = useAuth();
+  const isAdmin = (typeof hasRole === 'function') && hasRole(['admin', 'agency_admin']);
 
   return (
     <header
@@ -109,6 +113,16 @@ export default function Navbar({ theme = 'dark', toggleTheme = () => {} }) {
               {l.label}
             </NavLink>
           ))}
+          {isAdmin && (
+            <NavLink
+              to="/admin/activity"
+              style={({ isActive }) => ({ ...linkStyle(isActive), display: 'inline-flex', alignItems: 'center', gap: 6 })}
+              title="Activity log"
+            >
+              <ActivityIcon size={14} />
+              Activity
+            </NavLink>
+          )}
         </nav>
 
         <div style={{ flex: 1 }} />
@@ -126,24 +140,12 @@ export default function Navbar({ theme = 'dark', toggleTheme = () => {} }) {
 
           {user ? (
             <div className="pst-nav-user" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--fg-secondary)', fontSize: 13 }}>
-                <UserCircle size={18} />
-                <span>{user.full_name || user.first_name || user.email || 'User'}</span>
-              </span>
-              <button
-                type="button"
-                onClick={logout}
-                style={{ ...iconBtnStyle, padding: '8px 12px', display: 'inline-flex', gap: 6 }}
-                title="Sign out"
-              >
-                <LogOut size={14} />
-                <span style={{ fontSize: 13 }}>Sign out</span>
-              </button>
+              <SavedSearchesMenu />
+              <UserMenu />
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => login('google')}
+            <Link
+              to="/login"
               style={{
                 background: 'var(--orange-500)',
                 color: '#fff',
@@ -156,6 +158,7 @@ export default function Navbar({ theme = 'dark', toggleTheme = () => {} }) {
                 alignItems: 'center',
                 gap: 6,
                 cursor: 'pointer',
+                textDecoration: 'none',
                 transition: 'opacity var(--transition)',
               }}
               onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.88')}
@@ -163,7 +166,7 @@ export default function Navbar({ theme = 'dark', toggleTheme = () => {} }) {
             >
               <LogIn size={14} />
               Sign in
-            </button>
+            </Link>
           )}
 
           <button
@@ -202,6 +205,15 @@ export default function Navbar({ theme = 'dark', toggleTheme = () => {} }) {
               {l.label}
             </NavLink>
           ))}
+          {isAdmin && (
+            <NavLink
+              to="/admin/activity"
+              onClick={() => setMobileOpen(false)}
+              style={({ isActive }) => ({ ...linkStyle(isActive), padding: '10px 14px' })}
+            >
+              Activity
+            </NavLink>
+          )}
         </nav>
       )}
 

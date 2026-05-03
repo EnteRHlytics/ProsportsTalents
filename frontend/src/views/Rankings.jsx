@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageWrapper from '../components/layout/PageWrapper';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import RankingTable from '../components/ranking/RankingTable';
+import ExportButtons from '../components/common/ExportButtons';
 
 const SPORTS = [
   { code: 'ALL', label: 'All Sports' },
@@ -27,6 +28,8 @@ export default function Rankings() {
   const [limit, setLimit] = useState(10);
   const [rows, setRows] = useState([]);
   const [weights, setWeights] = useState(DEFAULT_WEIGHTS);
+  const [presets, setPresets] = useState([]);
+  const [selectedPresetId, setSelectedPresetId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -36,6 +39,7 @@ export default function Rankings() {
     const params = new URLSearchParams();
     if (sport && sport !== 'ALL') params.append('sport', sport);
     params.append('limit', String(limit));
+    if (selectedPresetId) params.append('preset_id', selectedPresetId);
     fetch(`/api/rankings/top?${params.toString()}`)
       .then((res) => {
         if (!res.ok) throw new Error('Failed to load rankings');
@@ -47,9 +51,13 @@ export default function Rankings() {
         // breakdown.  Falls back silently to defaults.
         return fetch('/api/rankings/presets')
           .then((r) => (r.ok ? r.json() : []))
-          .then((presets) => {
-            if (!Array.isArray(presets)) return;
-            const def = presets.find(
+          .then((list) => {
+            const arr = Array.isArray(list) ? list : [];
+            setPresets(arr);
+            const matchingPreset = selectedPresetId
+              ? arr.find((p) => String(p.id) === String(selectedPresetId))
+              : null;
+            const def = matchingPreset || arr.find(
               (p) =>
                 p.is_default &&
                 (sport === 'ALL'
@@ -63,7 +71,20 @@ export default function Rankings() {
       })
       .catch(() => setError('Failed to load rankings'))
       .finally(() => setLoading(false));
-  }, [sport, limit]);
+  }, [sport, limit, selectedPresetId]);
+
+  const exportParams = useMemo(() => {
+    const p = {};
+    if (sport && sport !== 'ALL') p.sport = sport;
+    if (selectedPresetId) p.preset_id = selectedPresetId;
+    return p;
+  }, [sport, selectedPresetId]);
+
+  const presetOptionsForSport = useMemo(() => {
+    return (presets || []).filter((p) =>
+      sport === 'ALL' ? p.sport_code == null : p.sport_code === sport || p.sport_code == null,
+    );
+  }, [presets, sport]);
 
   return (
     <PageWrapper>
@@ -99,21 +120,24 @@ export default function Rankings() {
             durability, fan perception and market value scores.
           </p>
         </div>
-        <Link
-          to="/rankings/customize"
-          style={{
-            padding: '9px 18px',
-            background: 'var(--orange-500)',
-            color: '#fff',
-            fontSize: 13,
-            fontWeight: 600,
-            borderRadius: 'var(--radius-md)',
-            textDecoration: 'none',
-            fontFamily: 'var(--font-body)',
-          }}
-        >
-          Customize Metrics
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <ExportButtons type="rankings" params={exportParams} />
+          <Link
+            to="/rankings/customize"
+            style={{
+              padding: '9px 18px',
+              background: 'var(--orange-500)',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 600,
+              borderRadius: 'var(--radius-md)',
+              textDecoration: 'none',
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            Customize Metrics
+          </Link>
+        </div>
       </div>
 
       <div
@@ -149,6 +173,37 @@ export default function Rankings() {
           );
         })}
         <div style={{ flex: 1 }} />
+        {presetOptionsForSport.length > 0 && (
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 12,
+              color: 'var(--fg-tertiary)',
+              marginRight: 6,
+            }}
+          >
+            Preset
+            <select
+              value={selectedPresetId}
+              onChange={(e) => setSelectedPresetId(e.target.value)}
+              style={{
+                padding: '6px 8px',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--fg-primary)',
+                fontSize: 12,
+              }}
+            >
+              <option value="">Default</option>
+              {presetOptionsForSport.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <label
           style={{
             display: 'flex',

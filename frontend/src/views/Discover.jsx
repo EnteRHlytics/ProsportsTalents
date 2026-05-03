@@ -6,6 +6,7 @@ import FilterPanel from '../components/search/FilterPanel';
 import SearchResultsGrid from '../components/search/SearchResultsGrid';
 import SavedSearchSidebar from '../components/search/SavedSearchSidebar';
 import SaveSearchModal from '../components/search/SaveSearchModal';
+import ExportButtons from '../components/common/ExportButtons';
 
 // ---------------------------------------------------------------------------
 // Local API helper.
@@ -250,13 +251,26 @@ export default function Discover() {
     return bits.join(' ').slice(0, 80) || 'My search';
   }, [filters, tab]);
 
+  // Filter params suitable for the export endpoint — drop empty values and add tab.
+  const exportParams = useMemo(() => {
+    const out = {};
+    for (const [k, v] of Object.entries(filters)) {
+      if (v != null && v !== '') out[k] = v;
+    }
+    if (tab && tab !== 'all') out.filter = tab;
+    return out;
+  }, [filters, tab]);
+
   return (
     <div className="px-4 sm:px-8 py-6 max-w-[1400px] mx-auto">
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold text-slate-100">Discover Athletes</h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Search, filter, and save lists of athletes across NBA, NFL, MLB, NHL, and Soccer.
-        </p>
+      <header className="mb-6 flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-100">Discover Athletes</h1>
+          <p className="text-sm text-slate-400 mt-1">
+            Search, filter, and save lists of athletes across NBA, NFL, MLB, NHL, and Soccer.
+          </p>
+        </div>
+        <ExportButtons type="search" params={exportParams} />
       </header>
 
       {/* League / quick filter tabs */}
