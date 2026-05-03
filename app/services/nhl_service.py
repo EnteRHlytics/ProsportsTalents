@@ -21,9 +21,14 @@ class NHLAPIClient:
         rate_limit_interval: float = 1.0,
         cache_timeout: int = 3600,
     ):
-        self.base_url = base_url or current_app.config.get(
-            "NHL_API_BASE_URL", "https://statsapi.web.nhl.com/api/v1"
-        )
+        if base_url is None:
+            try:
+                base_url = current_app.config.get(
+                    "NHL_API_BASE_URL", "https://statsapi.web.nhl.com/api/v1"
+                )
+            except RuntimeError:
+                base_url = "https://statsapi.web.nhl.com/api/v1"
+        self.base_url = base_url
         self.session = requests.Session()
         self.rate_limiter = RateLimiter(rate_limit_interval)
         self.cache = SimpleCache(default_timeout=cache_timeout)

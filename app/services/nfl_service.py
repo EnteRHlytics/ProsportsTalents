@@ -21,11 +21,19 @@ class NFLAPIClient:
         rate_limit_interval: float = 1.0,
         cache_timeout: int = 3600,
     ):
-        self.base_url = base_url or current_app.config.get(
-            "NFL_API_BASE_URL", "https://api.balldontlie.io/nfl/v1"
-        )
+        if base_url is None:
+            try:
+                base_url = current_app.config.get(
+                    "NFL_API_BASE_URL", "https://api.balldontlie.io/nfl/v1"
+                )
+            except RuntimeError:
+                base_url = "https://api.balldontlie.io/nfl/v1"
+        self.base_url = base_url
         self.session = requests.Session()
-        token = current_app.config.get("NFL_API_TOKEN")
+        try:
+            token = current_app.config.get("NFL_API_TOKEN")
+        except RuntimeError:
+            token = None
         if token:
             self.session.headers.update({"Authorization": f"Bearer {token}"})
         self.rate_limiter = RateLimiter(rate_limit_interval)

@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 
 from flask import current_app, jsonify, request
 from flask_login import current_user
@@ -45,6 +46,91 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_LIMIT = 10
 _MAX_LIMIT = 100
+
+
+# ---------------------------------------------------------------------------
+# Backwards-compat helpers used by templates / older callers.
+#
+# The pre-merge rankings module exposed `_dynamic_rankings` and
+# `_load_rankings`; `app/main/routes.py` and the dashboard template still
+# import them. We re-implement them on top of the new multi-factor algorithm
+# so the imports don't break.
+# ---------------------------------------------------------------------------
+
+
+_DEFAULT_RANKINGS_FALLBACK = [
+    {"id": None, "name": "LeBron James", "score": 98.5},
+    {"id": None, "name": "Connor McDavid", "score": 97.8},
+    {"id": None, "name": "Mike Trout", "score": 96.2},
+    {"id": None, "name": "Aaron Donald", "score": 95.7},
+    {"id": None, "name": "Stephen Curry", "score": 94.9},
+    {"id": None, "name": "Giannis Antetokounmpo", "score": 94.0},
+    {"id": None, "name": "Patrick Mahomes", "score": 93.5},
+    {"id": None, "name": "Sidney Crosby", "score": 92.8},
+    {"id": None, "name": "Shohei Ohtani", "score": 92.2},
+    {"id": None, "name": "Lionel Messi", "score": 91.7},
+]
+
+
+def _load_rankings():
+    """Load static rankings from a configured JSON file or return defaults.
+
+    Kept for backwards compatibility with templates / pages that fall back to
+    a static list when no athletes exist yet.
+    """
+    try:
+        path = current_app.config.get("TOP_RANKINGS_FILE")
+    except Exception:
+        path = None
+    if path and os.path.exists(path):
+        try:
+            with open(path) as f:
+                data = json.load(f)
+                # Normalise: ensure each entry has at least name / score / id keys.
+                for entry in data:
+                    entry.setdefault("id", None)
+                    entry.setdefault("score", 0)
+                return data
+        except Exception:
+            try:
+                current_app.logger.exception(
+                    "Failed to load rankings file %s", path
+                )
+            except Exception:
+                pass
+    return list(_DEFAULT_RANKINGS_FALLBACK)
+
+
+def _dynamic_rankings(limit=5, sport_code=None):
+    """Compute rankings for athletes using the multi-factor algorithm.
+
+    Returns a list of dicts shaped like::
+
+        {"id": <athlete_id>, "name": <full name>, "score": <0-100 float>}
+
+    or ``None`` when there are no athletes in the database (so callers can
+    fall back to :func:`_load_rankings`).
+    """
+    try:
+        records = _records_for(sport_code=sport_code)
+    except Exception:
+        # If the DB / models are unavailable fall back to None so callers
+        # use the static defaults.
+        return None
+    if not records:
+        return None
+
+    ranked = compute_rankings(
+        records, weights=DEFAULT_WEIGHTS, sport=sport_code, limit=limit
+    )
+    out = []
+    for row in ranked:
+        out.append({
+            "id": row.get("athlete_id"),
+            "name": row.get("name"),
+            "score": row.get("score"),
+        })
+    return out
 
 
 # ---------------------------------------------------------------------------

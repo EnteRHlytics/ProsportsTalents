@@ -135,7 +135,7 @@ class AthleteList(Resource):
         )
         db.session.add(athlete)
         db.session.commit()
-        logging.getLogger(__name__).info("Created athlete %s", athlete.id)
+        logging.getLogger(__name__).info("Created athlete %s", athlete.athlete_id)
         return jsonify(athlete.to_dict()), 201
 
 
@@ -165,7 +165,7 @@ class AthleteResource(Resource):
             if field in data:
                 setattr(athlete, field, data[field])
         db.session.commit()
-        logging.getLogger(__name__).info("Updated athlete %s", athlete.id)
+        logging.getLogger(__name__).info("Updated athlete %s", athlete.athlete_id)
         return jsonify(athlete.to_dict())
 
     @api.doc(description="Delete an athlete")
@@ -177,7 +177,7 @@ class AthleteResource(Resource):
         )
         athlete.is_deleted = True
         db.session.commit()
-        logging.getLogger(__name__).info("Deleted athlete %s", athlete.id)
+        logging.getLogger(__name__).info("Deleted athlete %s", athlete.athlete_id)
         return '', 204
 
 
@@ -212,7 +212,7 @@ class AthleteMediaList(Resource):
         )
         db.session.add(media)
         db.session.commit()
-        logging.getLogger(__name__).info("Uploaded media %s", media.id)
+        logging.getLogger(__name__).info("Uploaded media %s", media.media_id)
         return jsonify(media.to_dict()), 201
 
 
@@ -228,7 +228,7 @@ class MediaResource(Resource):
         MediaService.delete_file(media.file_path)
         db.session.delete(media)
         db.session.commit()
-        logging.getLogger(__name__).info("Deleted media %s", media.id)
+        logging.getLogger(__name__).info("Deleted media %s", media.media_id)
         return '', 204
 
 
@@ -483,7 +483,7 @@ class StatResource(Resource):
 def create_athlete():
     data = request.get_json() or {}
     athlete = create_athlete_service(data)
-    logging.getLogger(__name__).info("Created athlete %s", athlete.id)
+    logging.getLogger(__name__).info("Created athlete %s", athlete.athlete_id)
     return jsonify(athlete.to_dict()), 201
 
 @bp.route('/athletes/<athlete_id>', methods=['GET'])
@@ -497,7 +497,7 @@ def get_athlete(athlete_id):
 def update_athlete(athlete_id):
     data = request.get_json() or {}
     athlete = update_athlete_service(athlete_id, data)
-    logging.getLogger(__name__).info("Updated athlete %s", athlete.id)
+    logging.getLogger(__name__).info("Updated athlete %s", athlete.athlete_id)
     return jsonify(athlete.to_dict())
 
 @bp.route('/athletes/<athlete_id>', methods=['DELETE'])
@@ -533,7 +533,7 @@ def upload_media(athlete_id):
     )
     db.session.add(media)
     db.session.commit()
-    logging.getLogger(__name__).info("Uploaded media %s", media.id)
+    logging.getLogger(__name__).info("Uploaded media %s", media.media_id)
     return jsonify(media.to_dict()), 201
 
 @bp.route('/athletes/<athlete_id>/media', methods=['GET'])
@@ -549,7 +549,7 @@ def delete_media(media_id):
     MediaService.delete_file(media.file_path)
     db.session.delete(media)
     db.session.commit()
-    logging.getLogger(__name__).info("Deleted media %s", media.id)
+    logging.getLogger(__name__).info("Deleted media %s", media.media_id)
     return '', 204
 
 @bp.route('/media/<media_id>/download', methods=['GET'])

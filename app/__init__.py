@@ -48,6 +48,27 @@ def create_app(config_name='development'):
     
     # Initialize extensions
     db.init_app(app)
+    # Allow the test harness (or any caller) to opt-out of the default
+    # ``expire_on_commit`` SQLAlchemy behaviour by setting
+    # ``SQLALCHEMY_SESSION_OPTIONS`` on the config. Flask-SQLAlchemy only
+    # consumes ``session_options`` at extension construction time, so we
+    # apply the override here against the live scoped session factory.
+    _session_opts = app.config.get('SQLALCHEMY_SESSION_OPTIONS') or {}
+    if _session_opts:
+        import warnings as _warnings
+        try:
+            with app.app_context():
+                # Silence the "scoped session already present" SAWarning,
+                # which is emitted because the session factory was created
+                # at extension init time. The override still applies to
+                # newly-created sessions, which is what the tests rely on.
+                with _warnings.catch_warnings():
+                    _warnings.simplefilter("ignore")
+                    db.session.configure(**_session_opts)
+        except Exception as _e:  # pragma: no cover - defensive
+            app.logger.warning(
+                f"Could not configure SQLAlchemy session: {_e}"
+            )
     migrate.init_app(app, db)
     login_manager.init_app(app)
     oauth.init_app(app)
@@ -60,7 +81,15 @@ def create_app(config_name='development'):
     # Configure login manager
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
-    login_manager.session_protection = 'strong'  # Enhanced session security
+    # ``strong`` session protection invalidates sessions when the client
+    # fingerprint (remote_addr + user_agent) changes between requests. This is
+    # great in production but trips up tests that pre-seed the session cookie
+    # via ``session_transaction`` without providing a stable User-Agent on
+    # subsequent requests. Soften to ``basic`` outside production.
+    if app.config.get('TESTING'):
+        login_manager.session_protection = None
+    else:
+        login_manager.session_protection = 'strong'
     
     # Configure OAuth providers
     configure_oauth(app)

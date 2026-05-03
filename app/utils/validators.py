@@ -3,37 +3,78 @@ from flask import request, jsonify
 from marshmallow import Schema, fields, ValidationError
 
 def validate_params(required_params):
-    """Decorator to validate request parameters"""
+    """Decorator to validate request parameters.
+
+    ``required_params`` may be a list/tuple of required parameter names. The
+    parameters may come from ``request.args``, ``request.json`` (when JSON
+    body), or ``request.form``.
+    """
+    required_params = list(required_params or [])
+
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            # Check for required parameters
+            json_body = None
+            if request.is_json:
+                try:
+                    json_body = request.get_json(silent=True)
+                except Exception:
+                    json_body = None
+            json_body = json_body or {}
             for param in required_params:
-                if param not in request.args and param not in request.json:
+                if (
+                    param not in request.args
+                    and param not in json_body
+                    and param not in request.form
+                ):
                     return jsonify({'error': f'Missing required parameter: {param}'}), 400
-            
             return f(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
+
 def validate_json(schema):
-    """Decorator to validate JSON request body against a schema"""
+    """Decorator to validate JSON request body.
+
+    ``schema`` may be either:
+
+    - A list/tuple of required field names (lightweight validation).
+    - A Marshmallow ``Schema`` instance (full schema validation).
+    """
+
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
+            if not request.is_json:
+                return jsonify({'error': 'Request must be JSON'}), 400
+
+            data = request.get_json(silent=True) or {}
+
+            # Lightweight required-field validation when given a list.
+            if isinstance(schema, (list, tuple, set)):
+                missing = [k for k in schema if k not in data]
+                if missing:
+                    return (
+                        jsonify({
+                            'error': 'Missing required fields',
+                            'missing': missing,
+                        }),
+                        400,
+                    )
+                return f(*args, **kwargs)
+
+            # Marshmallow schema validation.
             try:
-                # Validate request JSON
-                if not request.is_json:
-                    return jsonify({'error': 'Request must be JSON'}), 400
-                
-                # Validate against schema
-                schema.load(request.json)
-                
+                schema.load(data)
             except ValidationError as e:
                 return jsonify({'error': 'Validation error', 'messages': e.messages}), 400
-            
+
             return f(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 # Common validation schemas

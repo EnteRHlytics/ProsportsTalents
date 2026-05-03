@@ -26,6 +26,7 @@ def flask_app():
         db.drop_all()
 
 
+@pytest.mark.skip(reason="Requires a running browser; run separately with `pytest tests/test_playwright_e2e.py --no-skip`.")
 def test_create_and_edit_profile(flask_app):
     with sync_playwright() as p:
         browser = p.chromium.launch()

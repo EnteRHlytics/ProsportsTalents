@@ -21,9 +21,16 @@ class MLBAPIClient:
         rate_limit_interval: float = 1.0,
         cache_timeout: int = 3600,
     ):
-        self.base_url = base_url or current_app.config.get(
-            "MLB_API_BASE_URL", "https://statsapi.mlb.com/api/v1"
-        )
+        if base_url is None:
+            try:
+                base_url = current_app.config.get(
+                    "MLB_API_BASE_URL", "https://statsapi.mlb.com/api/v1"
+                )
+            except RuntimeError:
+                # No app context - fall back to a sensible default so the
+                # client can still be instantiated for unit tests.
+                base_url = "https://statsapi.mlb.com/api/v1"
+        self.base_url = base_url
         self.session = requests.Session()
         self.rate_limiter = RateLimiter(rate_limit_interval)
         self.cache = SimpleCache(default_timeout=cache_timeout)

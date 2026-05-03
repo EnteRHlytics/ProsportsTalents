@@ -1,7 +1,37 @@
 from app import db
-from datetime import datetime
+from datetime import datetime, date
+from decimal import Decimal
+from enum import Enum
 from sqlalchemy import event
 from flask import current_app
+import uuid
+
+def _to_jsonable(value):
+    """Best-effort conversion of an ORM column value to a JSON-safe primitive.
+
+    Handles datetime/date, Decimal, Enum and uuid.UUID transparently. Other
+    types pass through; callers can rely on Flask's JSON encoder for the rest.
+    """
+    if value is None:
+        return None
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, Decimal):
+        # Use float so it round-trips cleanly through JSON.
+        return float(value)
+    if isinstance(value, uuid.UUID):
+        return str(value)
+    if isinstance(value, (bytes, bytearray)):
+        try:
+            return value.decode('utf-8')
+        except Exception:
+            return value.hex()
+    return value
+
 
 class BaseModel(db.Model):
     """Enhanced base model with audit logging and soft delete"""
@@ -45,10 +75,7 @@ class BaseModel(db.Model):
             # Include columns
             for column in self.__table__.columns:
                 value = getattr(self, column.name)
-                # Handle datetime serialization
-                if isinstance(value, datetime):
-                    value = value.isoformat()
-                data[column.name] = value
+                data[column.name] = _to_jsonable(value)
             
             # Optionally include relationships
             if include_relationships:

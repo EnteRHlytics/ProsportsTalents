@@ -22,11 +22,21 @@ class NBAAPIClient:
         rate_limit_interval: float = 1.0,
         cache_timeout: int = 3600,
     ):
-        self.base_url = base_url or current_app.config.get(
-            'NBA_API_BASE_URL', 'https://api.balldontlie.io/v1'
-        )
+        if base_url is None:
+            try:
+                base_url = current_app.config.get(
+                    'NBA_API_BASE_URL', 'https://api.balldontlie.io/v1'
+                )
+            except RuntimeError:
+                base_url = 'https://api.balldontlie.io/v1'
+        self.base_url = base_url
         self.session = requests.Session()
-        self.token = token or current_app.config.get('NBA_API_TOKEN')
+        if token is None:
+            try:
+                token = current_app.config.get('NBA_API_TOKEN')
+            except RuntimeError:
+                token = None
+        self.token = token
         if self.token:
             self.session.headers.update({'Authorization': f'Bearer {self.token}'})
         self.rate_limiter = RateLimiter(rate_limit_interval)
@@ -130,8 +140,6 @@ def sync_games(client: NBAAPIClient, team_id: int, season: Optional[int] = None)
 
 def sync_player_stats(client: NBAAPIClient, athlete: AthleteProfile, season: Optional[int] = None):
     """Fetch season averages for an athlete and store as stats."""
-    if not athlete.current_team:
-        return None
     player_id = getattr(athlete, 'nba_player_id', None)
     if not player_id:
         return None

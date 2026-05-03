@@ -38,10 +38,13 @@ class AthleteSearchOptimized:
             q = params.get('q', '').strip()
             if q:
                 pattern = f"%{q}%"
+                # Use ANSI ``||`` concatenation so the query is portable across
+                # PostgreSQL and SQLite (the latter has no ``concat`` function).
+                full_name = User.first_name + ' ' + User.last_name
                 search_conditions = or_(
                     User.first_name.ilike(pattern),
                     User.last_name.ilike(pattern),
-                    func.concat(User.first_name, ' ', User.last_name).ilike(pattern),
+                    full_name.ilike(pattern),
                     Position.name.ilike(pattern),
                     AthleteProfile.current_team.ilike(pattern)
                 )
@@ -73,12 +76,22 @@ class AthleteSearchOptimized:
             
             # Age filters with date calculation
             today = date.today()
-            min_age = params.get('min_age', type=int)
+
+            def _int_or_none(name):
+                raw = params.get(name)
+                if raw in (None, ''):
+                    return None
+                try:
+                    return int(raw)
+                except (TypeError, ValueError):
+                    return None
+
+            min_age = _int_or_none('min_age')
             if min_age is not None:
                 cutoff = today.replace(year=today.year - min_age)
                 filters.append(AthleteProfile.date_of_birth <= cutoff)
-            
-            max_age = params.get('max_age', type=int)
+
+            max_age = _int_or_none('max_age')
             if max_age is not None:
                 cutoff = today.replace(year=today.year - max_age)
                 filters.append(AthleteProfile.date_of_birth >= cutoff)
@@ -95,25 +108,28 @@ class AthleteSearchOptimized:
             
             # Tab/filter handling
             filter_tab = params.get('filter', '').lower()
+            top_only = False
             if filter_tab in {'nba', 'nfl', 'mlb', 'nhl'}:
                 filters.append(Sport.code == filter_tab.upper())
             elif filter_tab == 'available':
                 filters.append(AthleteProfile.contract_active.is_(False))
             elif filter_tab == 'top':
-                # Limit results for top performers
-                query = query.limit(10)
-            
+                top_only = True
+
             # Apply all filters
             if filters:
                 query = query.filter(and_(*filters))
-            
-            # Ordering for performance
+
+            # Ordering must happen before any limit/offset is applied.
             query = query.order_by(
                 AthleteProfile.overall_rating.desc().nullslast(),
                 User.last_name,
                 User.first_name
             )
-            
+
+            if top_only:
+                query = query.limit(10)
+
             return query
             
         except Exception as e:
@@ -148,18 +164,43 @@ class AthleteSearch(Resource):
             params = request.args.to_dict()
             page = int(params.get('page', 1))
             per_page = min(int(params.get('per_page', 50)), 100)  # Max 100 per page
-            
+
             # Build optimized query
             query = AthleteSearchOptimized.build_search_query(params)
-            
-            # Execute with pagination
+
+            # The "top" filter applies a hard ``query.limit(...)`` which is
+            # incompatible with ``query.paginate`` (the latter calls
+            # ``order_by(None).count()`` internally). Bypass pagination in
+            # that case.
+            filter_tab = (params.get('filter') or '').lower()
+            if filter_tab == 'top':
+                items = query.all()
+                results = []
+                for athlete in items:
+                    try:
+                        results.append(athlete.to_dict())
+                    except Exception as e:
+                        current_app.logger.error(
+                            f"Error serializing athlete {athlete.athlete_id}: {e}"
+                        )
+                        continue
+                return jsonify({
+                    'results': results,
+                    'count': len(results),
+                    'total': len(results),
+                    'page': 1,
+                    'pages': 1,
+                    'has_next': False,
+                    'has_prev': False,
+                })
+
             pagination = query.paginate(
                 page=page,
                 per_page=per_page,
                 error_out=False,
                 max_per_page=100
             )
-            
+
             # Format results
             results = []
             for athlete in pagination.items:
@@ -168,11 +209,11 @@ class AthleteSearch(Resource):
                 except Exception as e:
                     current_app.logger.error(f"Error serializing athlete {athlete.athlete_id}: {e}")
                     continue
-            
+
             # Log search for analytics
             if current_app.config.get('DEBUG'):
                 current_app.logger.info(f"Search executed: {params}, returned {len(results)} results")
-            
+
             return jsonify({
                 'results': results,
                 'count': len(results),
@@ -214,9 +255,7 @@ class FeaturedAthletes(Resource):
                     db.joinedload(AthleteProfile.user),
                     db.joinedload(AthleteProfile.primary_sport),
                     db.joinedload(AthleteProfile.primary_position),
-                    db.subqueryload(AthleteProfile.stats).filter(
-                        AthleteStat.season == str(year)
-                    )
+                    db.subqueryload(AthleteProfile.stats),
                 )
                 .order_by(AthleteProfile.overall_rating.desc())
                 .limit(limit)
