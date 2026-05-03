@@ -1,10 +1,11 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import flash, redirect, render_template, url_for
 from flask_login import login_required
 
 from app import db
-from app.models import AthleteProfile, User
 from app.athletes import bp
 from app.athletes.forms import AthleteForm
+from app.models import AthleteProfile, User
+
 
 @bp.route('/')
 @login_required

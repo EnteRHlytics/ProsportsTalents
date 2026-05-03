@@ -2,14 +2,14 @@ import os
 import sys
 from datetime import date
 from unittest.mock import patch
-import requests
 
 import pytest
+import requests
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
-from app.models import NBATeam, NBAGame
+from app.models import NBAGame, NBATeam
 from app.services import nba_service
 
 

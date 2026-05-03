@@ -106,6 +106,38 @@ Test files live in `frontend/tests/`. Vitest runs in jsdom mode with `@testing-l
 
 ---
 
+## Running CI locally
+
+The same checks GitHub Actions runs on every push and pull request can be run locally:
+
+```bash
+# 1. Python lint (ruff)
+pip install -r requirements-dev.txt
+ruff check .                # report only
+ruff check . --fix          # apply auto-fixes
+
+# 2. Backend tests
+pytest tests/ -q --tb=short
+
+# 3. Frontend lint (eslint)
+cd frontend
+npm install
+npm run lint                # eslint src
+
+# 4. Frontend build + tests (vitest, includes a11y checks)
+npm run build
+npm test -- --run
+```
+
+The CI workflow lives in `.github/workflows/ci.yml` and runs three jobs in parallel:
+`lint` (ruff + eslint), `backend` (pytest on Python 3.11 and 3.12 with a Postgres
+service container), and `frontend` (vite build + vitest). Lint config lives in
+`pyproject.toml` (`[tool.ruff]`) and `frontend/.eslintrc.cjs`. Accessibility is
+covered by `frontend/tests/a11y.test.jsx`, which mounts the Dashboard and asserts
+zero serious/critical axe-core violations.
+
+---
+
 ## User authentication
 
 - Register at `/auth/register` — new accounts receive the `viewer` role automatically.

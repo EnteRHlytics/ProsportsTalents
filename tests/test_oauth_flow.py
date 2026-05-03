@@ -24,8 +24,9 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from app import create_app, db, oauth as oauth_ext
-from app.models import User, Role
+from app import create_app, db
+from app import oauth as oauth_ext
+from app.models import Role, User
 from app.models.oauth import UserOAuthAccount
 
 

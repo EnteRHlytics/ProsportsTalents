@@ -1,11 +1,18 @@
-from datetime import date
 import logging
+from datetime import date
 
 from app import db
 from app.models import AthleteProfile, NBATeam, NHLTeam, SyncLog
-from app.services import nba_service, nfl_service, mlb_service, nhl_service
-from app.services import gleague_service, milb_service as milb_svc, college_service
-from app.models.prospect import ProspectLeague, MinorLeagueTeam, Prospect
+from app.models.prospect import MinorLeagueTeam, Prospect, ProspectLeague
+from app.services import (
+    college_service,
+    gleague_service,
+    mlb_service,
+    nba_service,
+    nfl_service,
+    nhl_service,
+)
+from app.services import milb_service as milb_svc
 
 logger = logging.getLogger(__name__)
 

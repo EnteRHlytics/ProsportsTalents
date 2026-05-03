@@ -1,6 +1,8 @@
+import uuid
+
 from app import db
 from app.models.base import BaseModel
-import uuid
+
 
 class AthleteStat(BaseModel):
     __tablename__ = 'athlete_stats'

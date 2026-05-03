@@ -1,6 +1,8 @@
 from functools import wraps
-from flask import request, abort, session, redirect, url_for, flash
+
+from flask import abort, flash, redirect, request, session, url_for
 from flask_login import current_user, login_user
+
 from app.models.oauth import UserOAuthAccount
 
 

@@ -6,8 +6,9 @@ import ``cache_manager``/``cached`` from this module — when a real cache
 implementation lands, replace this stub.
 """
 
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, Optional
+from typing import Any
 
 
 class _NoOpCacheManager:
@@ -20,10 +21,10 @@ class _NoOpCacheManager:
     def init_app(self, app) -> None:
         self.app = app
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         return None
 
-    def set(self, key: str, value: Any, timeout: Optional[int] = None) -> bool:
+    def set(self, key: str, value: Any, timeout: int | None = None) -> bool:
         return False
 
     def delete(self, key: str) -> bool:

@@ -2,14 +2,14 @@ import os
 import sys
 from datetime import date
 from unittest.mock import patch
-import requests
 
 import pytest
+import requests
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
-from app.models import NHLTeam, NHLGame, AthleteProfile
+from app.models import AthleteProfile, NHLGame, NHLTeam
 from app.services import nhl_service
 
 
@@ -106,7 +106,7 @@ def test_sync_games(app_ctx):
 
 def test_sync_player_stats(app_ctx):
     athlete = AthleteProfile(user_id='u1', date_of_birth=date.fromisoformat('2000-01-01'))
-    setattr(athlete, 'nhl_player_id', 88)
+    athlete.nhl_player_id = 88
     db.session.add(athlete)
     db.session.commit()
 

@@ -21,7 +21,6 @@ from __future__ import annotations
 import logging
 import re
 import uuid
-from typing import Optional
 
 from flask import Flask, Response, request
 
@@ -52,7 +51,7 @@ def _looks_like_id(segment: str) -> bool:
     return False
 
 
-def extract_target_resource_id(path: str) -> Optional[str]:
+def extract_target_resource_id(path: str) -> str | None:
     """Best-effort extraction of a resource id from a URL path.
 
     - Strips a trailing 'sub-action' segment that is clearly not an id
@@ -72,7 +71,7 @@ def extract_target_resource_id(path: str) -> Optional[str]:
     return None
 
 
-def _client_ip() -> Optional[str]:
+def _client_ip() -> str | None:
     fwd = request.headers.get('X-Forwarded-For')
     if fwd:
         # First entry is original client
@@ -80,7 +79,7 @@ def _client_ip() -> Optional[str]:
     return request.remote_addr
 
 
-def _current_user_id() -> Optional[str]:
+def _current_user_id() -> str | None:
     try:
         from flask_login import current_user
         if getattr(current_user, 'is_authenticated', False):

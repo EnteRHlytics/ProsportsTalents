@@ -9,15 +9,15 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from app import create_app, db, jobs
 from app.models import (
-    NBATeam,
-    NBAGame,
-    NHLTeam,
-    NHLGame,
     AthleteProfile,
     AthleteStat,
+    NBAGame,
+    NBATeam,
+    NHLGame,
+    NHLTeam,
     Sport,
-    User,
     SyncLog,
+    User,
 )
 
 

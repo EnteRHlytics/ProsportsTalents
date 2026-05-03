@@ -1,10 +1,12 @@
-import uuid
 import json
+import uuid
 from datetime import date
+
 import pytest
 
 from app import create_app, db
-from app.models import User, AthleteProfile, Sport
+from app.models import AthleteProfile, Sport, User
+
 
 @pytest.fixture
 def app_instance(tmp_path, monkeypatch):

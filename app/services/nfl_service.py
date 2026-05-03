@@ -1,15 +1,15 @@
 import logging
-from typing import Optional
 
 import requests
-from flask import current_app
 from cachelib import SimpleCache
-from .http_utils import request_with_retry
-from .rate_limit import RateLimiter
+from flask import current_app
 
 from app import db
-from app.models import NFLTeam, AthleteProfile, AthleteStat
+from app.models import AthleteProfile, AthleteStat, NFLTeam
+
 from .data_mapping import map_nfl_team
+from .http_utils import request_with_retry
+from .rate_limit import RateLimiter
 
 
 class NFLAPIClient:
@@ -17,7 +17,7 @@ class NFLAPIClient:
 
     def __init__(
         self,
-        base_url: Optional[str] = None,
+        base_url: str | None = None,
         rate_limit_interval: float = 1.0,
         cache_timeout: int = 3600,
     ):
@@ -39,7 +39,7 @@ class NFLAPIClient:
         self.rate_limiter = RateLimiter(rate_limit_interval)
         self.cache = SimpleCache(default_timeout=cache_timeout)
 
-    def _get(self, endpoint: str, params: Optional[dict] = None):
+    def _get(self, endpoint: str, params: dict | None = None):
         """Perform GET with retry and handle errors."""
         url = f"{self.base_url}{endpoint}"
         try:
@@ -75,7 +75,7 @@ class NFLAPIClient:
         return teams
 
     def get_player_stats(
-        self, player_id: int, season: Optional[int] = None, group: str = "offense"
+        self, player_id: int, season: int | None = None, group: str = "offense"
     ):
         params = {"group": group}
         if season:
@@ -104,7 +104,7 @@ def sync_teams(client: NFLAPIClient):
 
 
 def sync_player_stats(
-    client: NFLAPIClient, athlete: AthleteProfile, season: Optional[int] = None
+    client: NFLAPIClient, athlete: AthleteProfile, season: int | None = None
 ):
     """Fetch NFL stats for an athlete and store them."""
     player_id = getattr(athlete, "nfl_player_id", None)

@@ -1,14 +1,17 @@
 import json
 import os
 import sys
+
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from datetime import date
+
 from app import create_app, db
-from app.models import User, AthleteProfile
+from app.models import AthleteProfile, User
 from app.models.oauth import UserOAuthAccount
+
 
 @pytest.fixture
 def app_instance():

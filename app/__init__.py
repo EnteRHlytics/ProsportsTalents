@@ -1,15 +1,16 @@
-from flask import Flask, jsonify, request, render_template
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_login import LoginManager
+import logging
+import os
+from logging.handlers import RotatingFileHandler
+
+from authlib.integrations.flask_client import OAuth
+from flask import Flask, jsonify, render_template, request
+from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_cors import CORS
-from authlib.integrations.flask_client import OAuth
+from flask_login import LoginManager
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
 from werkzeug.exceptions import HTTPException
-import logging
-from logging.handlers import RotatingFileHandler
-import os
 
 from config import config
 
@@ -35,17 +36,18 @@ limiter = Limiter(key_func=_limiter_key)
 # Import cache manager after defining db
 from app.utils.cache import cache_manager
 
+
 def create_app(config_name='development'):
     """Application factory with enhanced error handling and middleware"""
     app = Flask(__name__)
     app.config.from_object(config[config_name])
-    
+
     # Validate configuration
     config_errors = app.config.get('validate_config', lambda: [])()
     if config_errors:
         for error in config_errors:
             app.logger.warning(f"Configuration issue: {error}")
-    
+
     # Initialize extensions
     db.init_app(app)
     # Allow the test harness (or any caller) to opt-out of the default
@@ -74,10 +76,10 @@ def create_app(config_name='development'):
     oauth.init_app(app)
     limiter.init_app(app)
     cache_manager.init_app(app)
-    
+
     # Configure CORS for API endpoints
     CORS(app, resources={r"/api/*": {"origins": "*"}})
-    
+
     # Configure login manager
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
@@ -90,16 +92,16 @@ def create_app(config_name='development'):
         login_manager.session_protection = None
     else:
         login_manager.session_protection = 'strong'
-    
+
     # Configure OAuth providers
     configure_oauth(app)
-    
+
     # Setup logging
     setup_logging(app)
-    
+
     # Register error handlers
     register_error_handlers(app)
-    
+
     # Register blueprints
     register_blueprints(app)
 
@@ -107,7 +109,7 @@ def create_app(config_name='development'):
     # Order matters: security headers should run on every response (registered
     # first so it sets headers even when audit short-circuits); audit hook
     # records mutating requests after the response is built.
-    from app.middleware import register_security_headers, register_audit_middleware
+    from app.middleware import register_audit_middleware, register_security_headers
     register_security_headers(app)
     register_audit_middleware(app)
 
@@ -122,7 +124,7 @@ def create_app(config_name='development'):
     if app.config.get('ENABLE_SCHEDULER'):
         from app.scheduler import init_scheduler
         init_scheduler(app)
-    
+
     # User loader with error handling
     @login_manager.user_loader
     def load_user(user_id):
@@ -132,14 +134,14 @@ def create_app(config_name='development'):
         except Exception as e:
             app.logger.error(f"Error loading user {user_id}: {e}")
             return None
-    
+
     # Request logging middleware
     @app.before_request
     def log_request():
         """Log incoming requests for debugging"""
         if app.config.get('DEBUG'):
             app.logger.debug(f"Request: {request.method} {request.path}")
-    
+
     # Performance monitoring
     @app.after_request
     def after_request(response):
@@ -147,17 +149,17 @@ def create_app(config_name='development'):
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['X-XSS-Protection'] = '1; mode=block'
-        
+
         if app.config.get('DEBUG'):
             app.logger.debug(f"Response: {response.status_code}")
-        
+
         return response
-    
+
     return app
 
 def configure_oauth(app):
     """Configure OAuth providers with error handling"""
-    
+
     # Google OAuth
     if app.config.get('GOOGLE_CLIENT_ID'):
         try:
@@ -171,7 +173,7 @@ def configure_oauth(app):
             app.logger.info("Google OAuth configured successfully")
         except Exception as e:
             app.logger.error(f"Failed to configure Google OAuth: {e}")
-    
+
     # GitHub OAuth
     if app.config.get('GITHUB_CLIENT_ID'):
         try:
@@ -187,7 +189,7 @@ def configure_oauth(app):
             app.logger.info("GitHub OAuth configured successfully")
         except Exception as e:
             app.logger.error(f"Failed to configure GitHub OAuth: {e}")
-    
+
     # Azure OAuth
     if app.config.get('AZURE_CLIENT_ID') and app.config.get('AZURE_TENANT_ID'):
         try:
@@ -210,11 +212,11 @@ def register_blueprints(app):
         ('app.athletes', 'athletes', None),
         ('app.api', 'api', None),
     ]
-    
+
     for module_name, bp_name, url_prefix in blueprint_configs:
         try:
             module = __import__(module_name, fromlist=['bp'])
-            blueprint = getattr(module, 'bp')
+            blueprint = module.bp
             if url_prefix:
                 app.register_blueprint(blueprint, url_prefix=url_prefix)
             else:
@@ -225,14 +227,14 @@ def register_blueprints(app):
 
 def register_error_handlers(app):
     """Register comprehensive error handlers"""
-    
+
     @app.errorhandler(404)
     def not_found_error(error):
         """Handle 404 errors"""
         if request.path.startswith('/api/'):
             return jsonify({'error': 'Resource not found'}), 404
         return render_template('errors/404.html'), 404
-    
+
     @app.errorhandler(500)
     def internal_error(error):
         """Handle 500 errors"""
@@ -241,14 +243,14 @@ def register_error_handlers(app):
         if request.path.startswith('/api/'):
             return jsonify({'error': 'Internal server error'}), 500
         return render_template('errors/500.html'), 500
-    
+
     @app.errorhandler(HTTPException)
     def handle_http_exception(e):
         """Handle HTTP exceptions"""
         if request.path.startswith('/api/'):
             return jsonify({'error': e.description}), e.code
         return e
-    
+
     @app.errorhandler(Exception)
     def handle_unexpected_error(error):
         """Handle unexpected errors"""
@@ -264,7 +266,7 @@ def setup_logging(app):
         # Create logs directory if it doesn't exist
         if not os.path.exists('logs'):
             os.mkdir('logs')
-        
+
         # Setup rotating file handler
         file_handler = RotatingFileHandler(
             'logs/sport_agency.log',
@@ -276,6 +278,6 @@ def setup_logging(app):
         ))
         file_handler.setLevel(logging.INFO)
         app.logger.addHandler(file_handler)
-        
+
         app.logger.setLevel(logging.INFO)
         app.logger.info('Sport Agency startup')

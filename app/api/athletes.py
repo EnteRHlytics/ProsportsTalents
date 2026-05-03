@@ -1,18 +1,20 @@
-from flask import request, jsonify, current_app
-from flask_restx import Resource
-from sqlalchemy import or_, and_, func
-from datetime import date
 import traceback
+from datetime import date
 
-from app.api import api
+from flask import current_app, jsonify, request
+from flask_restx import Resource
+from sqlalchemy import and_, or_
+
 from app import db
-from app.models import AthleteProfile, User, Sport, Position, AthleteStat
-from app.utils.cache import cached, cache_manager
+from app.api import api
+from app.models import AthleteProfile, Position, Sport, User
+from app.utils.cache import cached
 from app.utils.validators import validate_params
+
 
 class AthleteSearchOptimized:
     """Optimized athlete search with advanced filtering and caching"""
-    
+
     @staticmethod
     def build_search_query(params):
         """Build optimized search query with proper indexing"""
@@ -30,10 +32,10 @@ class AthleteSearchOptimized:
                     db.joinedload(AthleteProfile.primary_position)
                 )
             )
-            
+
             # Apply filters efficiently
             filters = []
-            
+
             # Text search with proper indexing
             q = params.get('q', '').strip()
             if q:
@@ -49,7 +51,7 @@ class AthleteSearchOptimized:
                     AthleteProfile.current_team.ilike(pattern)
                 )
                 filters.append(search_conditions)
-            
+
             # Sport filter with proper join
             sport = params.get('sport')
             if sport:
@@ -57,7 +59,7 @@ class AthleteSearchOptimized:
                     filters.append(AthleteProfile.primary_sport_id == int(sport))
                 else:
                     filters.append(Sport.code.ilike(sport))
-            
+
             # Position filter
             position = params.get('position')
             if position:
@@ -68,12 +70,12 @@ class AthleteSearchOptimized:
                         Position.code.ilike(position),
                         Position.name.ilike(f"%{position}%")
                     ))
-            
+
             # Team filter
             team = params.get('team')
             if team:
                 filters.append(AthleteProfile.current_team.ilike(f"%{team}%"))
-            
+
             # Age filters with date calculation
             today = date.today()
 
@@ -95,7 +97,7 @@ class AthleteSearchOptimized:
             if max_age is not None:
                 cutoff = today.replace(year=today.year - max_age)
                 filters.append(AthleteProfile.date_of_birth >= cutoff)
-            
+
             # Physical attribute filters
             if params.get('min_height'):
                 filters.append(AthleteProfile.height_cm >= int(params['min_height']))
@@ -105,7 +107,7 @@ class AthleteSearchOptimized:
                 filters.append(AthleteProfile.weight_kg >= float(params['min_weight']))
             if params.get('max_weight'):
                 filters.append(AthleteProfile.weight_kg <= float(params['max_weight']))
-            
+
             # Tab/filter handling
             filter_tab = params.get('filter', '').lower()
             top_only = False
@@ -131,7 +133,7 @@ class AthleteSearchOptimized:
                 query = query.limit(10)
 
             return query
-            
+
         except Exception as e:
             current_app.logger.error(f"Error building search query: {e}")
             raise
@@ -139,7 +141,7 @@ class AthleteSearchOptimized:
 @api.route('/athletes/search')
 class AthleteSearch(Resource):
     """Enhanced athlete search endpoint with caching and error handling"""
-    
+
     @api.doc(params={
         'q': 'Free text search',
         'sport': 'Sport code or id',
@@ -223,7 +225,7 @@ class AthleteSearch(Resource):
                 'has_next': pagination.has_next,
                 'has_prev': pagination.has_prev
             })
-            
+
         except Exception as e:
             current_app.logger.error(f"Search error: {e}\n{traceback.format_exc()}")
             return jsonify({
@@ -234,7 +236,7 @@ class AthleteSearch(Resource):
 @api.route('/athletes/featured')
 class FeaturedAthletes(Resource):
     """Featured athletes endpoint with optimized queries"""
-    
+
     @api.doc(params={'limit': 'Number of athletes to return (default: 6, max: 20)'})
     @validate_params([])
     @cached(timeout=300)  # Cache for 5 minutes
@@ -243,7 +245,7 @@ class FeaturedAthletes(Resource):
         try:
             limit = min(request.args.get('limit', 6, type=int), 20)
             year = date.today().year
-            
+
             # Optimized query with eager loading
             athletes = (
                 AthleteProfile.query
@@ -261,17 +263,17 @@ class FeaturedAthletes(Resource):
                 .limit(limit)
                 .all()
             )
-            
+
             # Format response
             featured = []
             for athlete in athletes:
                 try:
                     name = athlete.user.full_name if athlete.user else f"Athlete {athlete.athlete_id}"
                     initials = "".join([n[0] for n in name.split()][:2]).upper()
-                    
+
                     # Get relevant stats based on sport
                     stats = self._get_athlete_stats(athlete, year)
-                    
+
                     featured.append({
                         "id": athlete.athlete_id,
                         "name": name,
@@ -286,20 +288,20 @@ class FeaturedAthletes(Resource):
                 except Exception as e:
                     current_app.logger.error(f"Error processing featured athlete {athlete.athlete_id}: {e}")
                     continue
-            
+
             return jsonify(featured)
-            
+
         except Exception as e:
             current_app.logger.error(f"Featured athletes error: {e}\n{traceback.format_exc()}")
             return jsonify({
                 'error': 'Failed to get featured athletes',
                 'message': str(e) if current_app.config.get('DEBUG') else 'Internal error'
             }), 500
-    
+
     def _get_athlete_stats(self, athlete, year):
         """Get formatted stats for an athlete"""
         sport = athlete.primary_sport.code if athlete.primary_sport else None
-        
+
         # Define sport-specific stat mappings
         stat_mappings = {
             "NBA": [
@@ -323,21 +325,21 @@ class FeaturedAthletes(Resource):
                 ("P", "Points")
             ]
         }
-        
+
         mapping = stat_mappings.get(sport, [])
         stats = []
-        
+
         # Get stats from database
         stat_dict = {stat.name: stat.value for stat in athlete.stats if stat.season == str(year)}
-        
+
         for label, stat_name in mapping:
             value = stat_dict.get(stat_name, "N/A")
             if value != "N/A":
                 value = self._format_stat_value(value)
             stats.append({"label": label, "value": value})
-        
+
         return stats
-    
+
     def _format_stat_value(self, value):
         """Format stat value for display"""
         try:

@@ -1,17 +1,19 @@
-import os
 import io
+import os
 import sys
 import uuid
 from datetime import date
+
 import pytest
 from werkzeug.datastructures import FileStorage
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
-from app.models import User, AthleteProfile
+from app.models import AthleteProfile, User
 from app.services import athlete_service
 from app.services.media_service import MediaService
+
 
 @pytest.fixture
 def app_instance(tmp_path, monkeypatch):
@@ -31,7 +33,7 @@ def app_ctx(app_instance):
 
 
 def create_user():
-    user = User(username=str(uuid.uuid4()), email=f'test@example.com', first_name='T', last_name='User')
+    user = User(username=str(uuid.uuid4()), email='test@example.com', first_name='T', last_name='User')
     user.save()
     return user
 

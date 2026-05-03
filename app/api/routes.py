@@ -1,48 +1,58 @@
-from flask import request, send_file, abort, jsonify, current_app
-from app.utils.validators import validate_json, validate_params
-from app.utils.auth import login_or_token_required
-from flask_restx import Resource
 import logging
+
+from flask import abort, current_app, jsonify, request, send_file
+from flask_restx import Resource
 from sqlalchemy import or_
 
-from app.api import api, bp
 from app import db
+from app.api import api, bp
 from app.models import (
-    AthleteProfile,
     AthleteMedia,
+    AthleteProfile,
     AthleteStat,
-    NBATeam,
     NBAGame,
-    NHLTeam,
+    NBATeam,
     NHLGame,
-    User,
+    NHLTeam,
     Position,
+    User,
 )
-from app.services.media_service import MediaService
 from app.services.athlete_service import (
     create_athlete as create_athlete_service,
-    get_athlete as get_athlete_service,
-    update_athlete as update_athlete_service,
+)
+from app.services.athlete_service import (
     delete_athlete as delete_athlete_service,
+)
+from app.services.athlete_service import (
+    get_athlete as get_athlete_service,
+)
+from app.services.athlete_service import (
     list_athletes as list_athletes_service,
 )
-from app.services.nba_service import NBAAPIClient
+from app.services.athlete_service import (
+    update_athlete as update_athlete_service,
+)
+from app.services.media_service import MediaService
 from app.services.mlb_service import MLBAPIClient
-from app.services.nhl_service import NHLAPIClient
+from app.services.nba_service import NBAAPIClient
 from app.services.nfl_service import NFLAPIClient
+from app.services.nhl_service import NHLAPIClient
+from app.utils.auth import login_or_token_required
 from app.utils.security import require_api_key
+from app.utils.validators import validate_json
 
 
 @api.route('/health')
 class HealthCheck(Resource):
     """Health check endpoint for monitoring"""
-    
+
     @api.doc(description="Check application health")
     def get(self):
         """Return health status of the application"""
-        from sqlalchemy import text
         import datetime
-        
+
+        from sqlalchemy import text
+
         try:
             # Check database connection
             db.session.execute(text('SELECT 1'))
@@ -50,7 +60,7 @@ class HealthCheck(Resource):
         except Exception as e:
             current_app.logger.error(f"Database health check failed: {e}")
             db_status = 'unhealthy'
-        
+
         # Check Redis connection (if configured)
         redis_status = 'not_configured'
         try:
@@ -61,10 +71,10 @@ class HealthCheck(Resource):
         except Exception as e:
             current_app.logger.error(f"Redis health check failed: {e}")
             redis_status = 'unhealthy'
-        
+
         # Overall health
         is_healthy = db_status == 'healthy'
-        
+
         response = {
             'status': 'healthy' if is_healthy else 'unhealthy',
             'timestamp': datetime.datetime.utcnow().isoformat(),
@@ -73,7 +83,7 @@ class HealthCheck(Resource):
                 'redis': redis_status
             }
         }
-        
+
         return response, 200 if is_healthy else 503
 
 
@@ -476,7 +486,7 @@ class StatResource(Resource):
         db.session.commit()
         logging.getLogger(__name__).info("Deleted stat %s", stat_id)
         return '', 204
-      
+
 @bp.route('/athletes', methods=['POST'])
 @login_or_token_required
 @validate_json(['user_id', 'primary_sport_id', 'primary_position_id', 'date_of_birth'])

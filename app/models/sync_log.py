@@ -1,6 +1,7 @@
 from app import db
 from app.models.base import BaseModel
 
+
 class SyncLog(BaseModel):
     __tablename__ = 'sync_logs'
 

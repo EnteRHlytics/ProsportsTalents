@@ -1,10 +1,9 @@
 import logging
 import time
-from typing import Optional
-
-from .rate_limit import RateLimiter
 
 import requests
+
+from .rate_limit import RateLimiter
 
 
 def request_with_retry(
@@ -13,8 +12,8 @@ def request_with_retry(
     url: str,
     retries: int = 3,
     backoff_factor: float = 1.0,
-    logger: Optional[logging.Logger] = None,
-    rate_limiter: Optional[RateLimiter] = None,
+    logger: logging.Logger | None = None,
+    rate_limiter: RateLimiter | None = None,
     **kwargs,
 ) -> requests.Response:
     """Perform an HTTP request with retry, backoff and optional rate limiting."""

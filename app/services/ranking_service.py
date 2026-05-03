@@ -61,8 +61,8 @@ The module exposes:
 
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
-
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any
 
 COMPONENT_KEYS = (
     "performance",
@@ -72,7 +72,7 @@ COMPONENT_KEYS = (
     "market_value",
 )
 
-DEFAULT_WEIGHTS: Dict[str, float] = {
+DEFAULT_WEIGHTS: dict[str, float] = {
     "performance": 0.4,
     "efficiency": 0.2,
     "durability": 0.2,
@@ -83,7 +83,7 @@ DEFAULT_WEIGHTS: Dict[str, float] = {
 # Per-sport "primary" stat used for the performance component.  The second
 # element is a rough maximum used to scale the value to 0-100 - it is a
 # heuristic anchor, not a hard cap.
-SPORT_PERFORMANCE_STATS: Dict[str, Sequence] = {
+SPORT_PERFORMANCE_STATS: dict[str, Sequence] = {
     "NBA": ("PointsPerGame", 35.0),
     "NFL": ("PassingYards", 5000.0),
     "MLB": ("BattingAverage", 0.350),
@@ -92,7 +92,7 @@ SPORT_PERFORMANCE_STATS: Dict[str, Sequence] = {
 }
 
 # Per-sport advanced/efficiency stat (with rough maximum for scaling).
-SPORT_EFFICIENCY_STATS: Dict[str, Sequence] = {
+SPORT_EFFICIENCY_STATS: dict[str, Sequence] = {
     "NBA": ("TrueShootingPct", 0.700),
     "NFL": ("PasserRating", 130.0),
     "MLB": ("OPS", 1.100),
@@ -101,7 +101,7 @@ SPORT_EFFICIENCY_STATS: Dict[str, Sequence] = {
 }
 
 # Approximate season length used for the durability calculation.
-SPORT_GAMES_PER_SEASON: Dict[str, int] = {
+SPORT_GAMES_PER_SEASON: dict[str, int] = {
     "NBA": 82,
     "NFL": 17,
     "MLB": 162,
@@ -117,7 +117,7 @@ GAMES_PLAYED_KEYS = ("GamesPlayed", "Games", "GP")
 # ---------------------------------------------------------------------------
 
 
-def _to_float(value: Any) -> Optional[float]:
+def _to_float(value: Any) -> float | None:
     """Best-effort coercion to ``float``, returning ``None`` on failure."""
     if value is None:
         return None
@@ -135,14 +135,14 @@ def _clamp(value: float, lo: float = 0.0, hi: float = 100.0) -> float:
     return value
 
 
-def _scale(value: Optional[float], max_val: float) -> Optional[float]:
+def _scale(value: float | None, max_val: float) -> float | None:
     """Scale ``value`` to a 0-100 range using ``max_val`` as the anchor."""
     if value is None or max_val in (None, 0):
         return None
     return _clamp((value / max_val) * 100.0)
 
 
-def _lookup_stat(stats: Iterable[Mapping[str, Any]], names: Sequence[str]) -> Optional[float]:
+def _lookup_stat(stats: Iterable[Mapping[str, Any]], names: Sequence[str]) -> float | None:
     """Return the most-recent numeric value for any of ``names`` in ``stats``.
 
     ``stats`` items are expected to be mappings with at least ``name`` and
@@ -173,7 +173,7 @@ def _lookup_stat(stats: Iterable[Mapping[str, Any]], names: Sequence[str]) -> Op
 # ---------------------------------------------------------------------------
 
 
-def normalise_weights(weights: Optional[Mapping[str, Any]]) -> Dict[str, float]:
+def normalise_weights(weights: Mapping[str, Any] | None) -> dict[str, float]:
     """Return a dict of valid component weights summing to 1.0.
 
     * Unknown keys are dropped.
@@ -184,7 +184,7 @@ def normalise_weights(weights: Optional[Mapping[str, Any]]) -> Dict[str, float]:
     if not weights:
         return dict(DEFAULT_WEIGHTS)
 
-    cleaned: Dict[str, float] = {}
+    cleaned: dict[str, float] = {}
     for key in COMPONENT_KEYS:
         raw = weights.get(key)
         val = _to_float(raw)
@@ -290,7 +290,7 @@ def _market_value_score(record: Mapping[str, Any]) -> float:
     return _clamp(rating * exp_factor)
 
 
-def _compute_components(record: Mapping[str, Any]) -> Dict[str, float]:
+def _compute_components(record: Mapping[str, Any]) -> dict[str, float]:
     return {
         "performance": round(_performance_score(record), 2),
         "efficiency": round(_efficiency_score(record), 2),
@@ -307,11 +307,11 @@ def _compute_components(record: Mapping[str, Any]) -> Dict[str, float]:
 
 def compute_rankings(
     athletes: Iterable[Mapping[str, Any]],
-    weights: Optional[Mapping[str, Any]] = None,
+    weights: Mapping[str, Any] | None = None,
     *,
-    sport: Optional[str] = None,
-    limit: Optional[int] = None,
-) -> List[Dict[str, Any]]:
+    sport: str | None = None,
+    limit: int | None = None,
+) -> list[dict[str, Any]]:
     """Return a ranked list of athletes.
 
     Parameters
@@ -336,7 +336,7 @@ def compute_rankings(
     ``rank`` (1-based).
     """
     norm_weights = normalise_weights(weights)
-    rows: List[Dict[str, Any]] = []
+    rows: list[dict[str, Any]] = []
     for record in athletes:
         if sport and record.get("sport_code") != sport:
             continue
@@ -364,7 +364,7 @@ def compute_rankings(
 # ---------------------------------------------------------------------------
 
 
-def build_athlete_record(athlete) -> Dict[str, Any]:
+def build_athlete_record(athlete) -> dict[str, Any]:
     """Convert an :class:`AthleteProfile` ORM row to the algorithm's input.
 
     The function is tolerant of missing relationships and stat collections.
@@ -387,7 +387,7 @@ def build_athlete_record(athlete) -> Dict[str, Any]:
     sport = getattr(athlete, "primary_sport", None)
     sport_code = getattr(sport, "code", None) if sport is not None else None
 
-    stats: List[Dict[str, Any]] = []
+    stats: list[dict[str, Any]] = []
     raw_stats = getattr(athlete, "stats", None) or []
     for s in raw_stats:
         stats.append({

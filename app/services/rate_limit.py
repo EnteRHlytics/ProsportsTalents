@@ -1,6 +1,7 @@
 import threading
 import time
 
+
 class RateLimiter:
     """Simple rate limiter enforcing a minimum interval between requests."""
 

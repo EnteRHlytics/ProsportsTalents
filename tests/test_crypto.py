@@ -155,8 +155,8 @@ def test_encrypted_string_handles_none(app_instance):
 
 def test_encrypted_string_swallow_decrypt_errors(app_instance):
     """When swallow_decrypt_errors=True, garbage ciphertext returns None."""
-    from sqlalchemy.orm import declarative_base, Session
     from sqlalchemy import text
+    from sqlalchemy.orm import Session, declarative_base
 
     Base = declarative_base()
 

@@ -8,14 +8,13 @@ Games / Skills tabs).
 
 from __future__ import annotations
 
-from io import BytesIO
+from collections.abc import Iterable
 from datetime import datetime
-from typing import Iterable, Optional
+from io import BytesIO
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
-
 
 # ---------------------------------------------------------------------------
 # Styling helpers
@@ -114,7 +113,7 @@ def _basics(athlete) -> dict:
 
 def athlete_profile_xlsx(athlete_id: str) -> BytesIO:
     """Return a multi-sheet workbook for a single athlete."""
-    from app.models import AthleteProfile, AthleteStat, AthleteSkill
+    from app.models import AthleteProfile, AthleteSkill, AthleteStat
 
     athlete = (
         AthleteProfile.query
@@ -272,8 +271,8 @@ def search_results_xlsx(athletes_list: Iterable, filters_summary: dict) -> Bytes
     return _to_bytes(wb)
 
 
-def rankings_xlsx(rankings: Iterable, sport: Optional[str] = None,
-                  weights: Optional[dict] = None) -> BytesIO:
+def rankings_xlsx(rankings: Iterable, sport: str | None = None,
+                  weights: dict | None = None) -> BytesIO:
     """Rankings workbook with optional ``Weights`` sheet."""
     wb = Workbook()
     ws_rank = wb.active
@@ -336,7 +335,7 @@ def _team_label(team) -> str:
 
 def _recent_games_for(athlete, limit: int = 20):
     try:
-        from app.models import NBATeam, NBAGame, NHLTeam, NHLGame
+        from app.models import NBAGame, NBATeam, NHLGame, NHLTeam
     except Exception:
         return []
     if not (getattr(athlete, "current_team", None) and getattr(athlete, "primary_sport", None)):
