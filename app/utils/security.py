@@ -1,26 +1,31 @@
-"""API key / token security helpers stub.
+"""API key / token security helpers.
 
-NOTE (Agent5): This is a minimal stub required because ``app/api/routes.py``
-imports ``require_api_key`` from this module. The fuller implementation likely
-belongs to the API/keys agent. This stub validates an ``X-API-Key`` header
-against the ``ApiKey`` model when the table exists, otherwise lets the request
-through (so it does not break local/dev work).
+Validates an ``X-API-Key`` header against the ``ApiKey`` model. Keys are
+stored as sha256 hashes; lookup uses the hash and verifies activation /
+expiry.
 
-It can safely be replaced with a stricter implementation later.
+If the model/table is unavailable (e.g. early bootstrap or a stale test
+DB), the helper falls back to allowing the request so unrelated work is
+not blocked.
 """
 
+from datetime import datetime
 from functools import wraps
 from typing import Callable
 
 from flask import abort, request
 
+from app import db
+
 
 def require_api_key(fn: Callable) -> Callable:
-    """Best-effort API key validator.
+    """Validator for ``X-API-Key`` header.
 
     - Looks for an API key in the ``X-API-Key`` header.
-    - If the ``ApiKey`` model and table are available, validates against them.
-    - If neither is available (early bootstrap, tests), allows the request.
+    - Validates against ``ApiKey`` (hash, is_active, expires_at).
+    - On a successful match, updates ``last_used_at``.
+    - If the model/table is unavailable, allows the request through so
+      bootstrapping/dev work isn't blocked.
     """
 
     @wraps(fn)
@@ -32,22 +37,26 @@ def require_api_key(fn: Callable) -> Callable:
             return fn(*args, **kwargs)
 
         if not api_key:
-            # If the column/table simply isn't deployed yet, don't crash dev
             try:
                 count = ApiKey.query.limit(1).count()
             except Exception:
                 return fn(*args, **kwargs)
             if count == 0:
-                # Nothing configured -> allow
                 return fn(*args, **kwargs)
             abort(401, "API key required")
 
         try:
-            record = ApiKey.query.filter_by(key=api_key).first()
+            record = ApiKey.find_by_raw_key(api_key)
         except Exception:
             return fn(*args, **kwargs)
-        if not record or not getattr(record, "is_active", True):
+        if not record:
             abort(401, "Invalid API key")
+
+        try:
+            record.last_used_at = datetime.utcnow()
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
         return fn(*args, **kwargs)
 
     return wrapper
