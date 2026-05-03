@@ -7,20 +7,28 @@ import SeasonStats from '../components/SeasonStats';
 import GameLog from '../components/GameLog';
 import ProfileHero from '../components/athlete/ProfileHero';
 import MediaGallery from '../components/athlete/MediaGallery';
+import MediaUploader from '../components/media/MediaUploader';
 import SkillRadar from '../components/charts/SkillRadar';
 import PageWrapper from '../components/layout/PageWrapper';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import ErrorMessage from '../components/ui/ErrorMessage';
+import ExportButtons from '../components/common/ExportButtons';
 import { getSportConfig } from '../utils/sportConfig';
+import { useAuth } from '../context/AuthContext';
+
+const EDIT_ROLES = ['admin', 'agency_admin', 'agent'];
 
 export default function AthleteProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const auth = useAuth ? useAuth() : { hasRole: () => false };
+  const canEdit = typeof auth?.hasRole === 'function' && auth.hasRole(EDIT_ROLES);
   const [athlete, setAthlete] = useState(null);
   const [skills, setSkills] = useState([]);
   const [statsTab, setStatsTab] = useState('summary');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [mediaRefresh, setMediaRefresh] = useState(0);
 
   useEffect(() => {
     setLoading(true);
@@ -67,6 +75,9 @@ export default function AthleteProfile() {
 
   return (
     <PageWrapper>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+        <ExportButtons type="athlete" id={id} label="Export" />
+      </div>
       <ProfileHero athlete={athlete} onDelete={handleDelete} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,2fr)', gap: 20 }}>
@@ -118,7 +129,17 @@ export default function AthleteProfile() {
                 <SkillRadar skills={skills} color={config.color} label={athlete.user?.full_name || 'Skills'} />
               </div>
             )}
-            {statsTab === 'media'    && <MediaGallery athleteId={id} />}
+            {statsTab === 'media' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {canEdit && (
+                  <MediaUploader
+                    athleteId={id}
+                    onUploaded={() => setMediaRefresh((n) => n + 1)}
+                  />
+                )}
+                <MediaGallery athleteId={id} refreshKey={mediaRefresh} />
+              </div>
+            )}
           </div>
         </div>
       </div>

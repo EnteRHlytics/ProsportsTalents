@@ -58,7 +58,7 @@ def test_upload_and_delete_media(client, app_instance, auth_headers):
     athlete = create_athlete()
 
     data = {
-        'file': (io.BytesIO(b'content'), 'test.txt'),
+        'file': (io.BytesIO(b'%PDF-1.4 minimal pdf content'), 'test.pdf'),
         'media_type': 'docs'
     }
     resp = client.post(
